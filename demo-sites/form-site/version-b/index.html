@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Participant Application - Version B</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #faf5ff; color: #581c87; padding: 2rem; }
+    .v2-box { max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 16px; padding: 2.25rem; border: 1px solid #e9d5ff; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
+    .v2-top { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed #c084fc; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+    h2 { font-size: 1.5rem; color: #7e22ce; font-weight: 800; }
+    .v2-badge { background: #f3e8ff; color: #6b21a8; padding: 6px 14px; border-radius: 9999px; font-size: 0.85rem; font-weight: 700; }
+    .v2-field { margin-bottom: 1.25rem; }
+    .v2-label { font-size: 0.9rem; font-weight: 700; color: #6b21a8; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .v2-input-field { width: 100%; padding: 14px 16px; border: 2px solid #d8b4fe; border-radius: 10px; font-size: 1rem; background: #faf5ff; color: #3b0764; outline: none; }
+    .v2-input-field:focus { border-color: #9333ea; background: #ffffff; }
+    .v2-submit-action { width: 100%; padding: 16px; background: #9333ea; color: white; border: none; border-radius: 10px; font-weight: 800; font-size: 1.05rem; cursor: pointer; margin-top: 1rem; }
+    .v2-submit-action:hover { background: #7e22ce; }
+    .v2-confirmation-box { display: none; background: #f3e8ff; border: 2px solid #a855f7; color: #581c87; padding: 1.25rem; border-radius: 10px; margin-top: 1.5rem; font-weight: 700; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="v2-box">
+    <div class="v2-top">
+      <h2>Participant Application Form</h2>
+      <span class="v2-badge">VERSION B (Modified Form Selectors)</span>
+    </div>
+
+    <form id="app-form" onsubmit="v2Submit(event)">
+      <div class="v2-field">
+        <div class="v2-label">Your Name</div>
+        <input type="text" name="candidate_name" class="v2-input-field" placeholder="Enter name" />
+      </div>
+
+      <div class="v2-field">
+        <div class="v2-label">Work Email</div>
+        <input type="text" name="contact_email" class="v2-input-field" placeholder="Enter email" />
+      </div>
+
+      <div class="v2-field">
+        <div class="v2-label">Mobile Contact</div>
+        <input type="text" name="contact_phone" class="v2-input-field" placeholder="Enter phone" />
+      </div>
+
+      <div class="v2-field">
+        <div class="v2-label">Current Location</div>
+        <input type="text" name="location_city" class="v2-input-field" placeholder="Enter city" />
+      </div>
+
+      <button type="submit" class="v2-submit-action">Submit Application 🚀</button>
+    </form>
+
+    <div id="v2-success" class="v2-confirmation-box">
+      🚀 Registration Successful! Your spot is confirmed.
+    </div>
+  </div>
+
+  <script>
+    function v2Submit(e) {
+      e.preventDefault();
+      document.getElementById('v2-success').style.display = 'block';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LearnHub - Version B</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #f0fdf4; color: #166534; padding: 2rem; }
+    .v2-wrapper { max-width: 820px; margin: 0 auto; background: #ffffff; border-radius: 16px; padding: 2rem; border: 1px solid #bbf7d0; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
+    .v2-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed #86efac; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+    .v2-brand { color: #15803d; font-size: 1.6rem; font-weight: 800; }
+    .v2-tag { background: #dcfce7; color: #15803d; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; }
+    .v2-search-group { display: flex; gap: 12px; margin-bottom: 2rem; }
+    .find-input-v2 { flex: 1; padding: 14px 18px; border: 2px solid #86efac; border-radius: 12px; font-size: 1.05rem; background: #f0fdf4; color: #14532d; outline: none; }
+    .find-input-v2:focus { border-color: #16a34a; background: #fff; }
+    .action-btn-v2 { padding: 14px 28px; background: #16a34a; color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 1rem; }
+    .action-btn-v2:hover { background: #15803d; }
+    .v2-grid { display: grid; gap: 1.25rem; }
+    .v2-card-item { background: #fafafa; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1.25rem; }
+    .v2-course-title { font-size: 1.2rem; color: #166534; text-decoration: none; font-weight: 700; display: inline-block; margin-bottom: 0.5rem; }
+    .v2-course-title:hover { color: #15803d; text-decoration: underline; }
+    .v2-desc { color: #4b5563; font-size: 0.95rem; line-height: 1.5; }
+    .v2-meta-row { display: flex; justify-content: space-between; margin-top: 1rem; font-size: 0.85rem; color: #166534; font-weight: 600; }
+    .v2-detail-panel { display: none; background: #ecfdf5; border: 2px solid #6ee7b7; border-radius: 12px; padding: 1.5rem; margin-top: 1.5rem; }
+    .v2-detail-panel.visible { display: block; }
+  </style>
+</head>
+<body>
+  <div class="v2-wrapper">
+    <div class="v2-header">
+      <div class="v2-brand">LearnHub Catalog 🔍</div>
+      <span class="v2-tag">VERSION B (Modified Selectors & UI)</span>
+    </div>
+
+    <div class="v2-search-group">
+      <input type="text" name="query_term" class="find-input-v2" data-test="search-query-field" placeholder="Find Courses 🔍" />
+      <button class="action-btn-v2" data-test="do-search" onclick="v2Search()">Explore Now</button>
+    </div>
+
+    <div id="v2-results" class="v2-grid">
+      <div class="v2-card-item" data-name="Python Programming Masterclass">
+        <a href="#" class="v2-course-title" onclick="v2Select('Python Programming Masterclass')">Python Programming Masterclass</a>
+        <p class="v2-desc">Comprehensive course covering Python basics, OOP, data structures, and async programming.</p>
+        <div class="v2-meta-row">
+          <span>Score: 4.9 ★</span>
+          <span>Price: $49</span>
+        </div>
+      </div>
+
+      <div class="v2-card-item" data-name="Machine Learning Specialization">
+        <a href="#" class="v2-course-title" onclick="v2Select('Machine Learning Specialization')">Machine Learning Specialization</a>
+        <p class="v2-desc">Learn regression, classification, neural networks, and model deployment in Python.</p>
+        <div class="v2-meta-row">
+          <span>Score: 4.8 ★</span>
+          <span>Price: $79</span>
+        </div>
+      </div>
+
+      <div class="v2-card-item" data-name="React Web Development">
+        <a href="#" class="v2-course-title" onclick="v2Select('React Web Development')">React Web Development</a>
+        <p class="v2-desc">Modern web UI development with React 18, TypeScript, Tailwind CSS, and state management.</p>
+        <div class="v2-meta-row">
+          <span>Score: 4.7 ★</span>
+          <span>Price: $59</span>
+        </div>
+      </div>
+
+      <div class="v2-card-item" data-name="Data Structures & Algorithms">
+        <a href="#" class="v2-course-title" onclick="v2Select('Data Structures & Algorithms')">Data Structures & Algorithms</a>
+        <p class="v2-desc">Essential computer science algorithms and problem solving techniques for coding interviews.</p>
+        <div class="v2-meta-row">
+          <span>Score: 4.9 ★</span>
+          <span>Price: $39</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="v2-detail-panel" class="v2-detail-panel">
+      <h3 id="v2-detail-heading" style="color:#047857; margin-bottom:0.5rem;">Course Found!</h3>
+      <p id="v2-detail-text" style="color:#065f46;">You have navigated to the syllabus page on Version B UI structure.</p>
+    </div>
+  </div>
+
+  <script>
+    function v2Search() {
+      const q = document.querySelector('input[name="query_term"]').value.toLowerCase().trim();
+      const items = document.querySelectorAll('.v2-card-item');
+      items.forEach(item => {
+        const name = item.getAttribute('data-name').toLowerCase();
+        const desc = item.querySelector('.v2-desc').innerText.toLowerCase();
+        if (!q || name.includes(q) || desc.includes(q)) {
+          item.style.display = 'block';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
+
+    function v2Select(name) {
+      document.getElementById('v2-detail-heading').innerText = "Selected: " + name;
+      document.getElementById('v2-detail-text').innerText = "Target course opened: " + name + ". Verification success confirmed on modified DOM topology.";
+      document.getElementById('v2-detail-panel').classList.add('visible');
+    }
+  </script>
+</body>
+</html>

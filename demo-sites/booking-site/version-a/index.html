@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkyWings Flights - Version A</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #f0f9ff; color: #0c4a6e; padding: 2rem; }
+    .card { max-width: 800px; margin: 0 auto; background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+    header { border-bottom: 2px solid #bae6fd; padding-bottom: 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+    h1 { color: #0284c7; font-size: 1.5rem; }
+    .badge { background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+    .field { display: flex; flex-direction: column; gap: 0.4rem; }
+    label { font-weight: 600; font-size: 0.9rem; color: #0369a1; }
+    input { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; }
+    .search-btn { grid-column: span 2; padding: 14px; background: #0284c7; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 1rem; }
+    .flight-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; }
+    .flight-info { font-weight: 700; color: #0f172a; }
+    .book-btn { padding: 10px 18px; background: #0284c7; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+    .confirmation { display: none; background: #f0fdf4; border: 1px solid #86efac; color: #166534; padding: 1.25rem; border-radius: 8px; margin-top: 1.5rem; font-weight: 700; text-align: center; }
+    .confirmation.show { display: block; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <header>
+      <h1>SkyWings Flight Booking</h1>
+      <span class="badge">VERSION A</span>
+    </header>
+
+    <div class="form-grid">
+      <div class="field">
+        <label for="fromCity">From City</label>
+        <input type="text" id="fromCity" placeholder="Departure city (e.g. New Delhi)" />
+      </div>
+
+      <div class="field">
+        <label for="toCity">To City</label>
+        <input type="text" id="toCity" placeholder="Destination city (e.g. Mumbai)" />
+      </div>
+
+      <button id="btn-find-flights" class="search-btn" onclick="findFlights()">Find Flights ✈️</button>
+    </div>
+
+    <div id="results-list" style="display:none;">
+      <div class="flight-card">
+        <div>
+          <div class="flight-info">Flight SW-102 | Non-stop</div>
+          <div style="color:#64748b; font-size:0.85rem;">08:00 AM - 10:15 AM | $120</div>
+        </div>
+        <button class="book-btn" onclick="bookFlight('SW-102')">Book Seat</button>
+      </div>
+
+      <div class="flight-card">
+        <div>
+          <div class="flight-info">Flight SW-304 | 1 Stop</div>
+          <div style="color:#64748b; font-size:0.85rem;">01:30 PM - 04:45 PM | $95</div>
+        </div>
+        <button class="book-btn" onclick="bookFlight('SW-304')">Book Seat</button>
+      </div>
+    </div>
+
+    <div id="booking-confirm" class="confirmation">
+      ✈️ Flight Ticket Confirmed! Your booking reference: SW-88492.
+    </div>
+  </div>
+
+  <script>
+    function findFlights() {
+      document.getElementById('results-list').style.display = 'block';
+    }
+
+    function bookFlight(flightNo) {
+      const banner = document.getElementById('booking-confirm');
+      banner.innerText = "✈️ Flight Ticket " + flightNo + " Confirmed! Booking verification complete.";
+      banner.classList.add('show');
+    }
+  </script>
+</body>
+</html>

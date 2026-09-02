@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GadgetHub Market - Version B</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #fff7ed; color: #7c2d12; padding: 2rem; }
+    .v2-wrapper { max-width: 860px; margin: 0 auto; background: #ffffff; border-radius: 16px; padding: 2.25rem; border: 1px solid #ffedd5; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
+    .v2-nav { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed #fdba74; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+    .v2-title { font-size: 1.6rem; color: #ea580c; font-weight: 800; }
+    .v2-pill { background: #ffedd5; color: #c2410c; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; }
+    .v2-bag-badge { background: #ea580c; color: white; padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; }
+    .v2-search-container { display: flex; gap: 12px; margin-bottom: 2rem; }
+    .v2-search-bar { flex: 1; padding: 14px 18px; border: 2px solid #fdba74; border-radius: 12px; font-size: 1.05rem; background: #fff7ed; outline: none; }
+    .v2-find-prod-btn { padding: 14px 28px; background: #ea580c; color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 1rem; }
+    .v2-catalog { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; }
+    .v2-item-box { background: #fafafa; border: 1px solid #fed7aa; border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; }
+    .v2-item-name { font-size: 1.15rem; font-weight: 800; color: #9a3412; margin-bottom: 0.5rem; }
+    .v2-item-cost { font-size: 1.25rem; font-weight: 800; color: #ea580c; margin-bottom: 1rem; }
+    .v2-buy-btn { padding: 12px; background: #f97316; color: white; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; text-align: center; }
+    .v2-buy-btn:hover { background: #ea580c; }
+    .v2-bag-notification { display: none; background: #fff7ed; border: 2px solid #f97316; color: #9a3412; padding: 1.25rem; border-radius: 10px; margin-top: 1.5rem; font-weight: 700; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="v2-wrapper">
+    <div class="v2-nav">
+      <div class="v2-title">GadgetHub Market 🛒</div>
+      <div>
+        <span class="v2-pill" style="margin-right: 10px;">VERSION B (Alternative Actions)</span>
+        <span class="v2-bag-badge">Bag: <span id="v2-bag-count">0</span></span>
+      </div>
+    </div>
+
+    <div class="v2-search-container">
+      <input type="text" name="catalog_search" class="v2-search-bar" placeholder="Search store products..." />
+      <button class="v2-find-prod-btn" onclick="v2Filter()">Find</button>
+    </div>
+
+    <div class="v2-catalog" id="v2-catalog-grid">
+      <div class="v2-item-box" data-title="Wireless Noise-Canceling Headphones">
+        <div>
+          <div class="v2-item-name">Wireless Noise-Canceling Headphones</div>
+          <p style="color:#6b7280; font-size:0.85rem; margin-bottom:0.5rem;">Premium audio experience with active noise cancellation.</p>
+        </div>
+        <div>
+          <div class="v2-item-cost">$149.99</div>
+          <button class="v2-buy-btn" onclick="v2AddToBag('Wireless Noise-Canceling Headphones')">Put in Bag</button>
+        </div>
+      </div>
+
+      <div class="v2-item-box" data-title="Smart Fitness Watch">
+        <div>
+          <div class="v2-item-name">Smart Fitness Watch</div>
+          <p style="color:#6b7280; font-size:0.85rem; margin-bottom:0.5rem;">Track workouts, heart rate, sleep quality, and GPS.</p>
+        </div>
+        <div>
+          <div class="v2-item-cost">$99.99</div>
+          <button class="v2-buy-btn" onclick="v2AddToBag('Smart Fitness Watch')">Put in Bag</button>
+        </div>
+      </div>
+
+      <div class="v2-item-box" data-title="Ergonomic Laptop Stand">
+        <div>
+          <div class="v2-item-name">Ergonomic Laptop Stand</div>
+          <p style="color:#6b7280; font-size:0.85rem; margin-bottom:0.5rem;">Aluminum adjustable stand for comfortable desktop posture.</p>
+        </div>
+        <div>
+          <div class="v2-item-cost">$39.99</div>
+          <button class="v2-buy-btn" onclick="v2AddToBag('Ergonomic Laptop Stand')">Put in Bag</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="v2-bag-msg" class="v2-bag-notification">
+      🛒 Item added to cart!
+    </div>
+  </div>
+
+  <script>
+    let bCount = 0;
+    function v2AddToBag(item) {
+      bCount++;
+      document.getElementById('v2-bag-count').innerText = bCount;
+      const n = document.getElementById('v2-bag-msg');
+      n.innerText = "🛒 Added '" + item + "' to your shopping bag!";
+      n.style.display = 'block';
+    }
+
+    function v2Filter() {
+      const q = document.querySelector('input[name="catalog_search"]').value.toLowerCase().trim();
+      const boxes = document.querySelectorAll('.v2-item-box');
+      boxes.forEach(b => {
+        const title = b.getAttribute('data-title').toLowerCase();
+        if (!q || title.includes(q)) {
+          b.style.display = 'flex';
+        } else {
+          b.style.display = 'none';
+        }
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EduSearch - Version A</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #f8fafc; color: #1e293b; padding: 2rem; }
+    .container { max-width: 800px; margin: 0 auto; background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+    header { border-bottom: 2px solid #e2e8f0; padding-bottom: 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+    h1 { color: #2563eb; font-size: 1.5rem; font-weight: 700; }
+    .badge { background: #dbeafe; color: #1d4ed8; padding: 4px 10px; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; }
+    .search-box { display: flex; gap: 10px; margin-bottom: 2rem; }
+    .search-input { flex: 1; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; outline: none; }
+    .search-input:focus { border-color: #2563eb; ring: 2px #bfdbfe; }
+    .search-btn { padding: 12px 24px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .search-btn:hover { background: #1d4ed8; }
+    .results-list { display: grid; gap: 1rem; }
+    .course-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.25rem; transition: border-color 0.2s; }
+    .course-card:hover { border-color: #93c5fd; }
+    .course-title { font-size: 1.15rem; color: #1e293b; text-decoration: none; font-weight: 600; display: inline-block; margin-bottom: 0.5rem; }
+    .course-title:hover { color: #2563eb; }
+    .course-desc { color: #64748b; font-size: 0.95rem; line-height: 1.5; }
+    .course-meta { display: flex; justify-content: space-between; margin-top: 1rem; font-size: 0.85rem; color: #475569; }
+    .detail-view { display: none; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 1.5rem; margin-top: 1.5rem; }
+    .detail-view.active { display: block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>EduSearch Course Finder</h1>
+      <span class="badge">VERSION A (Standard Selectors)</span>
+    </header>
+
+    <div class="search-box">
+      <input type="text" id="search-input" class="search-input" placeholder="Search for courses..." />
+      <button id="search-btn" class="search-btn" onclick="performSearch()">Search</button>
+    </div>
+
+    <div id="results-area" class="results-list">
+      <div class="course-card" data-title="Python Programming Masterclass">
+        <a href="#" class="course-title" onclick="selectCourse('Python Programming Masterclass')">Python Programming Masterclass</a>
+        <p class="course-desc">Comprehensive course covering Python basics, OOP, data structures, and async programming.</p>
+        <div class="course-meta">
+          <span>Rating: 4.9 ★</span>
+          <span>Price: $49</span>
+        </div>
+      </div>
+
+      <div class="course-card" data-title="Machine Learning Specialization">
+        <a href="#" class="course-title" onclick="selectCourse('Machine Learning Specialization')">Machine Learning Specialization</a>
+        <p class="course-desc">Learn regression, classification, neural networks, and model deployment in Python.</p>
+        <div class="course-meta">
+          <span>Rating: 4.8 ★</span>
+          <span>Price: $79</span>
+        </div>
+      </div>
+
+      <div class="course-card" data-title="React Web Development">
+        <a href="#" class="course-title" onclick="selectCourse('React Web Development')">React Web Development</a>
+        <p class="course-desc">Modern web UI development with React 18, TypeScript, Tailwind CSS, and state management.</p>
+        <div class="course-meta">
+          <span>Rating: 4.7 ★</span>
+          <span>Price: $59</span>
+        </div>
+      </div>
+
+      <div class="course-card" data-title="Data Structures & Algorithms">
+        <a href="#" class="course-title" onclick="selectCourse('Data Structures & Algorithms')">Data Structures & Algorithms</a>
+        <p class="course-desc">Essential computer science algorithms and problem solving techniques for coding interviews.</p>
+        <div class="course-meta">
+          <span>Rating: 4.9 ★</span>
+          <span>Price: $39</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="detail-view" class="detail-view">
+      <h2 id="detail-title" style="color:#0369a1; margin-bottom:0.5rem;">Course Selected</h2>
+      <p id="detail-msg" style="color:#0c4a6e;">You have successfully navigated to the course details page.</p>
+    </div>
+  </div>
+
+  <script>
+    function performSearch() {
+      const query = document.getElementById('search-input').value.toLowerCase().trim();
+      const cards = document.querySelectorAll('.course-card');
+      cards.forEach(card => {
+        const title = card.getAttribute('data-title').toLowerCase();
+        const desc = card.querySelector('.course-desc').innerText.toLowerCase();
+        if (!query || title.includes(query) || desc.includes(query)) {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    function selectCourse(title) {
+      document.getElementById('detail-title').innerText = "Selected: " + title;
+      document.getElementById('detail-msg').innerText = "Congratulations! You are now viewing full course syllabus for " + title + ". Verification success target match achieved.";
+      document.getElementById('detail-view').classList.add('active');
+    }
+  </script>
+</body>
+</html>

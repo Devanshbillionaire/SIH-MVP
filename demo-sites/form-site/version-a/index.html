@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registration Form - Version A</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #f8fafc; color: #0f172a; padding: 2rem; }
+    .card { max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+    .header { border-bottom: 2px solid #e2e8f0; padding-bottom: 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+    h1 { font-size: 1.4rem; color: #0284c7; }
+    .badge { background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; }
+    .form-group { margin-bottom: 1.25rem; }
+    label { display: block; font-weight: 600; margin-bottom: 0.5rem; font-size: 0.95rem; color: #334155; }
+    .form-input { width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; outline: none; }
+    .form-input:focus { border-color: #0284c7; }
+    .submit-btn { width: 100%; padding: 14px; background: #0284c7; color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 1.05rem; cursor: pointer; margin-top: 1rem; }
+    .submit-btn:hover { background: #0369a1; }
+    .success-alert { display: none; background: #f0fdf4; border: 1px solid #86efac; color: #166534; padding: 1.25rem; border-radius: 8px; margin-top: 1.5rem; font-weight: 600; text-align: center; }
+    .success-alert.show { display: block; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <h1>SIH Tech Workshop Registration</h1>
+      <span class="badge">VERSION A</span>
+    </div>
+
+    <form id="reg-form" onsubmit="handleFormSubmit(event)">
+      <div class="form-group">
+        <label for="fullName">Full Name</label>
+        <input type="text" id="fullName" name="fullName" class="form-input" placeholder="e.g. Alex Johnson" />
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" class="form-input" placeholder="alex@example.com" />
+      </div>
+
+      <div class="form-group">
+        <label for="phone">Phone Number</label>
+        <input type="tel" id="phone" name="phone" class="form-input" placeholder="123-456-7890" />
+      </div>
+
+      <div class="form-group">
+        <label for="city">City</label>
+        <input type="text" id="city" name="city" class="form-input" placeholder="New Delhi" />
+      </div>
+
+      <button type="submit" id="btn-submit" class="submit-btn">Register Now</button>
+    </form>
+
+    <div id="success-banner" class="success-alert">
+      🎉 Registration Successful! Welcome to the workshop.
+    </div>
+  </div>
+
+  <script>
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      document.getElementById('success-banner').classList.add('show');
+    }
+  </script>
+</body>
+</html>
