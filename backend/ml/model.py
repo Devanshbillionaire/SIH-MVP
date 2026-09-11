@@ -34,18 +34,12 @@ class AgentMLModel:
         self.save()
 
     def predict_confidence(self, features: list) -> float:
-        """
-        features: [visual_confidence, dom_confidence, text_similarity, context_similarity, previous_success_rate]
-        Returns probability of action success (0.0 to 1.0)
-        """
         try:
             X_input = np.array(features).reshape(1, -1)
             probs = self.model.predict_proba(X_input)
-            # Probability of class 1 (success)
             prob_success = probs[0][1] if len(probs[0]) > 1 else probs[0][0]
             return round(float(prob_success), 4)
         except Exception:
-            # Fallback heuristic if prediction fails
             avg = sum(features[:3]) / 3.0
             return round(float(avg), 4)
 

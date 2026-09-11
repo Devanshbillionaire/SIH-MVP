@@ -1,0 +1,6 @@
+{
+  "name": "PrivaSight",
+  "description": "Visual-First Lightweight Intelligent Browser Agent",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

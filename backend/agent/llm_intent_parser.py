@@ -11,10 +11,7 @@ class HybridLLMIntentParser:
     """
     @staticmethod
     def parse_intent(task_prompt: str, api_key: str = None) -> Dict[str, Any]:
-        # Fast deterministic rule-based parsing
         rule_result = IntentParser.parse(task_prompt)
-
-        # Check if Gemini API key is configured in environment or parameter
         gemini_key = api_key or os.environ.get("GEMINI_API_KEY")
 
         if gemini_key:
@@ -39,14 +36,12 @@ class HybridLLMIntentParser:
                 
                 response = model.generate_content(f"{system_instruction}\nUser Prompt: {task_prompt}")
                 text = response.text.strip()
-                # Clean markdown backticks if present
                 text = re.sub(r'^```json\s*|\s*```$', '', text, flags=re.MULTILINE)
                 
                 parsed = json.loads(text)
                 parsed["parser_mode"] = "GEMINI_1.5_FLASH_LLM"
                 return parsed
             except Exception:
-                # Fallback to rule-based parser on network or key error
                 rule_result["parser_mode"] = "RULE_BASED_NLP_FALLBACK"
                 return rule_result
         else:

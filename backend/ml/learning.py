@@ -1,29 +1,31 @@
+from typing import List, Dict, Any
 from ml.predictor import get_ml_model_instance
-from storage.interaction_store import InteractionStore
 
-def update_model_from_storage():
+class AgentLearningPipeline:
     """
-    Retrains scikit-learn model with accumulated privacy-safe interaction records.
+    Online learning pipeline for updating the Random Forest agent model
+    using privacy-sanitized feature vectors and verified interaction outcomes.
     """
-    store = InteractionStore()
-    interactions = store.get_all_interactions()
-    
-    if len(interactions) < 2:
-        return
-
-    X = []
-    y = []
-
-    for item in interactions:
-        vis = item.get("visual_confidence", 0.5)
-        dom = item.get("dom_confidence", 0.5)
-        sim = item.get("text_similarity", 0.5)
-        ctx = 0.8
-        prev = 0.85
+    @staticmethod
+    def retrain_from_interactions(interactions: List[Dict[str, Any]]):
+        if not interactions:
+            return
         
-        success = 1 if item.get("success", True) else 0
-        X.append([vis, dom, sim, ctx, prev])
-        y.append(success)
-
-    model = get_ml_model_instance()
-    model.retrain(X, y)
+        X = []
+        y = []
+        for item in interactions:
+            if "visual_confidence" in item and "dom_confidence" in item:
+                feats = [
+                    float(item.get("visual_confidence", 0.8)),
+                    float(item.get("dom_confidence", 0.8)),
+                    float(item.get("text_similarity", 0.8)),
+                    float(item.get("context_similarity", 0.8)),
+                    float(item.get("prev_success", 0.85))
+                ]
+                label = 1 if item.get("success", True) else 0
+                X.append(feats)
+                y.append(label)
+        
+        if X and y:
+            model = get_ml_model_instance()
+            model.retrain(X, y)

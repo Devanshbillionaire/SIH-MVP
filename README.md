@@ -1,7 +1,8 @@
-# Visual-First Intelligent Browser Agent
+# PrivaSight
 
+> **Visual-First Lightweight Intelligent Browser Agent**  
 > **Smart India Hackathon (SIH) MVP Project**  
-> A lightweight, robust AI browser automation system combining DOM perception, visual heuristics, `scikit-learn` machine learning, `scikit-fuzzy` decision engine, Playwright browser execution, automated result verification, and privacy-aware feature logging.
+> A lightweight, robust AI browser automation system combining DOM perception, visual heuristics, machine learning confidence scoring, fuzzy decision engine, Playwright browser execution, automated result verification, and privacy-aware feature logging.
 
 ---
 

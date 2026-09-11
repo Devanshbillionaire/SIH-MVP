@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Safe Form Execution Test Fixture - PrivaSight</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; line-height: 1.5; color: #333; }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-weight: 600; margin-bottom: 6px; }
+    input[type="text"], input[type="email"], input[type="tel"], input[type="password"], select, textarea {
+      width: 100%; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px;
+    }
+    .radio-group, .checkbox-group { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+    .actions { display: flex; gap: 12px; margin-top: 24px; }
+    button { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; }
+    .btn-submit { background-color: #2563eb; color: white; }
+    .btn-danger { background-color: #dc2626; color: white; }
+    .captcha-box { display: none; padding: 12px; border: 1px dashed #d97706; background: #fef3c7; border-radius: 6px; margin-bottom: 16px; }
+    .login-required-box { display: none; padding: 12px; border: 1px dashed #ef4444; background: #fee2e2; border-radius: 6px; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+  <h2>Participant Registration Form</h2>
+  <p>Automated test fixture for Safe Form Execution Engine.</p>
+
+  <!-- Conditional CAPTCHA Box for Test Scenario -->
+  <div id="captcha-container" class="captcha-box g-recaptcha" data-sitekey="test-key">
+    <iframe title="reCAPTCHA" src="about:blank" width="300" height="78"></iframe>
+    <p>Please complete this CAPTCHA verification to proceed.</p>
+  </div>
+
+  <!-- Conditional Login Notice for Test Scenario -->
+  <div id="login-box" class="login-required-box">
+    <h3>Authentication Required</h3>
+    <p>Please log in to continue accessing this application form.</p>
+  </div>
+
+  <form id="registration-form" action="/fixtures/submitted" method="POST" onsubmit="event.preventDefault(); document.getElementById('status-msg').innerText = 'FORM_SUBMITTED_SUCCESSFULLY';">
+    <div class="form-group">
+      <label for="name">Full Name</label>
+      <input type="text" id="name" name="name" placeholder="e.g. Alex Johnson" required />
+    </div>
+
+    <div class="form-group">
+      <label for="email">Email Address</label>
+      <input type="email" id="email" name="email" placeholder="alex@example.com" required />
+    </div>
+
+    <div class="form-group">
+      <label for="phone">Phone Number</label>
+      <input type="tel" id="phone" name="phone" placeholder="+1-555-0199" />
+    </div>
+
+    <div class="form-group">
+      <label for="address">Mailing Address</label>
+      <textarea id="address" name="address" rows="2" placeholder="Street, Suite, City"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="country">Country</label>
+      <select id="country" name="country">
+        <option value="">-- Select Country --</option>
+        <option value="US">United States</option>
+        <option value="CA">Canada</option>
+        <option value="UK">United Kingdom</option>
+        <option value="IN">India</option>
+        <option value="AU">Australia</option>
+        <option value="DE">Germany</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Gender</label>
+      <div class="radio-group">
+        <label><input type="radio" name="gender" value="male" id="gender-male" /> Male</label>
+        <label><input type="radio" name="gender" value="female" id="gender-female" /> Female</label>
+        <label><input type="radio" name="gender" value="other" id="gender-other" /> Non-binary / Other</label>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="password">Account Password</label>
+      <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="new-password" />
+    </div>
+
+    <!-- Ambiguous fields for Disambiguation Testing -->
+    <div class="form-group" id="ambiguous-email-group" style="display: none;">
+      <label for="billing-email">Billing Email</label>
+      <input type="email" id="billing-email" name="billing_email" placeholder="billing@example.com" />
+      <label for="contact-email">Contact Email</label>
+      <input type="email" id="contact-email" name="contact_email" placeholder="contact@example.com" />
+    </div>
+
+    <!-- Stale Element for Testing -->
+    <div class="form-group" id="stale-field-container">
+      <label for="ephemeral-input">Temporary Verification Code</label>
+      <input type="text" id="ephemeral-input" name="ephemeral" placeholder="123456" />
+    </div>
+
+    <div class="form-group checkbox-group">
+      <input type="checkbox" id="terms" name="terms" />
+      <label for="terms" style="margin-bottom: 0; font-weight: normal;">I agree to the Terms and Conditions and Privacy Policy</label>
+    </div>
+
+    <div class="actions">
+      <button type="submit" id="submit-btn" class="btn-submit">Submit Registration</button>
+      <button type="button" id="pay-btn" class="btn-submit" style="background-color: #059669;">Pay $49.00</button>
+      <button type="button" id="delete-btn" class="btn-danger">Delete Account</button>
+    </div>
+  </form>
+
+  <div id="status-msg" style="margin-top: 20px; font-weight: bold; color: #059669;"></div>
+
+  <script>
+    // Test control URL params:
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('captcha') === 'true') {
+      document.getElementById('captcha-container').style.display = 'block';
+    }
+    if (params.get('login') === 'true') {
+      document.getElementById('login-box').style.display = 'block';
+    }
+    if (params.get('ambiguous') === 'true') {
+      document.getElementById('ambiguous-email-group').style.display = 'block';
+    }
+    if (params.get('stale') === 'true') {
+      // Simulate DOM element becoming stale after 1 second
+      setTimeout(() => {
+        const el = document.getElementById('stale-field-container');
+        if (el) el.remove();
+      }, 800);
+    }
+  </script>
+</body>
+</html>
