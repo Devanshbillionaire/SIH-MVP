@@ -1,6 +1,6 @@
 import { ScoredCandidate } from './elementDetector';
 
-export type FuzzyDecisionOutput = 'EXECUTE' | 'VERIFY' | 'RETRY' | 'ASK_USER' | 'REJECT';
+export type FuzzyDecisionOutput = 'EXECUTE' | 'VERIFY' | 'RETRY' | 'ASK_USER' | 'REJECT' | 'ACT' | 'REVIEW';
 export type ActionRiskLevel = 'LOW' | 'MEDIUM' | 'HIGH';
 
 export interface FuzzyMemberships {
@@ -24,6 +24,7 @@ export interface FuzzyRuleActivation {
 
 export interface FuzzyEvaluationResult {
   decision: FuzzyDecisionOutput;
+  score: number;                  // Normalized decision / fuzzy score (0.0 - 1.0)
   fuzzy_confidence: number;       // Decision confidence (0.0 - 1.0)
   candidate_confidence: number;   // Top candidate match score (0.0 - 1.0)
   ambiguity_score: number;        // Calculated ambiguity (0.0 = clear, 1.0 = highly ambiguous)
@@ -89,6 +90,106 @@ export function fuzzyShoulderRight(x: number, a: number, b: number): number {
 }
 
 export class FuzzyDecisionEngine {
+  public act_threshold: number = 0.72;
+  public review_threshold: number = 0.45;
+
+  public limit(value: any): number {
+    const num = Number(value);
+    if (isNaN(num)) return 0.0;
+    return Math.max(0.0, Math.min(1.0, num));
+  }
+
+  public low(value: any): number {
+    const v = this.limit(value);
+    if (v <= 0) return 1.0;
+    if (v >= 0.5) return 0.0;
+    return (0.5 - v) / 0.5;
+  }
+
+  public medium(value: any): number {
+    const v = this.limit(value);
+    if (v <= 0.2 || v >= 0.8) return 0.0;
+    if (v < 0.5) return (v - 0.2) / 0.3;
+    return (0.8 - v) / 0.3;
+  }
+
+  public high(value: any): number {
+    const v = this.limit(value);
+    if (v <= 0.5) return 0.0;
+    if (v >= 1) return 1.0;
+    return (v - 0.5) / 0.5;
+  }
+
+  public evaluateCore(
+    visual_confidence: number,
+    context_relevance: number,
+    ml_confidence: number,
+    previous_success: number
+  ): { score: number; decision: 'ACT' | 'REVIEW' | 'REJECT' } {
+    const visual = this.limit(visual_confidence);
+    const context = this.limit(context_relevance);
+    const ml = this.limit(ml_confidence);
+    const history = this.limit(previous_success);
+
+    const visual_high = this.high(visual);
+    const visual_medium = this.medium(visual);
+    const visual_low = this.low(visual);
+
+    const context_high = this.high(context);
+    const context_low = this.low(context);
+
+    const ml_high = this.high(ml);
+    const ml_medium = this.medium(ml);
+    const ml_low = this.low(ml);
+
+    const history_high = this.high(history);
+
+    const rules = [
+      Math.min(visual_high, context_high, ml_high),
+      Math.min(visual_high, context_high, ml_medium),
+      Math.min(visual_high, ml_high, history_high),
+      Math.min(visual_medium, context_high, ml_high),
+      Math.min(context_high, ml_high, history_high)
+    ];
+
+    const positive = Math.max(...rules);
+
+    const uncertainty = Math.max(
+      visual_low,
+      context_low,
+      ml_low
+    );
+
+    const supporting_score = (
+      0.25 * visual +
+      0.25 * context +
+      0.30 * ml +
+      0.20 * history
+    );
+
+    let score = (
+      0.70 * positive +
+      0.30 * supporting_score
+    );
+
+    score -= 0.15 * uncertainty;
+    score = this.limit(score);
+
+    let decision: 'ACT' | 'REVIEW' | 'REJECT';
+    if (score >= this.act_threshold) {
+      decision = 'ACT';
+    } else if (score >= this.review_threshold) {
+      decision = 'REVIEW';
+    } else {
+      decision = 'REJECT';
+    }
+
+    return {
+      score: Math.round(score * 10000) / 10000,
+      decision
+    };
+  }
+
   /**
    * Determine action risk level from action name or metadata
    */
@@ -270,28 +371,66 @@ export class FuzzyDecisionEngine {
     };
 
     if (typeof input === 'number') {
-      const [domConf = 0.5, mlConf = null, riskLvl = 0.1, scoreGap = 0.30, candCount = 1, compScore] = legacyArgs;
-      const v_c = Math.max(0, Math.min(1, input));
-      const d_c = Math.max(0, Math.min(1, domConf));
-      const t_s = d_c; // Default fallback for text similarity in legacy call
-      const m_c = mlConf !== null && mlConf !== undefined ? Math.max(0, Math.min(1, mlConf)) : null;
-      const r_l = Math.max(0, Math.min(1, riskLvl));
-      const gap = scoreGap !== undefined ? Math.max(0, Math.min(1, scoreGap)) : null;
-      const c_s = compScore !== undefined ? compScore : (v_c * 0.35 + d_c * 0.35 + (m_c ?? 0.5) * 0.30);
+      const visual = input;
+      const context = legacyArgs[0] ?? 0.5;
+      const ml = legacyArgs[1] !== null && legacyArgs[1] !== undefined ? legacyArgs[1] : 0.5;
+      const history = legacyArgs[2] ?? 0.5;
 
-      params = {
-        visualConfidence: v_c,
-        domConfidence: d_c,
-        textSimilarity: t_s,
-        mlConfidence: m_c,
-        candidateConfidence: c_s,
-        confidenceGap: candCount > 1 ? gap : null,
-        candidateCount: candCount,
-        actionType: 'TYPE',
-        actionRisk: r_l >= 0.70 ? 'HIGH' : r_l >= 0.40 ? 'MEDIUM' : 'LOW',
-        numericRisk: r_l,
-        topCandidate: null,
-        secondCandidate: null
+      const core = this.evaluateCore(visual, context, ml, history);
+      const score = core.score;
+      const decision = core.decision;
+
+      const v_c = this.limit(visual);
+      const c_rel = this.limit(context);
+      const m_c = legacyArgs[1] !== null && legacyArgs[1] !== undefined ? this.limit(legacyArgs[1]) : null;
+      const prev_s = this.limit(history);
+
+      const decisionOutput: FuzzyDecisionOutput = decision;
+      const reason = `Fuzzy decision: ${decision} with composite score ${score}`;
+
+      return {
+        decision: decisionOutput,
+        score,
+        fuzzy_confidence: score,
+        candidate_confidence: score,
+        ambiguity_score: Math.round(Math.max(this.low(v_c), this.low(c_rel), this.low(m_c ?? 0.5)) * 10000) / 10000,
+        score_gap: null,
+        top_candidate: null,
+        second_candidate: null,
+        candidate_count: 1,
+        action_type: 'CLICK',
+        action_risk: 'LOW',
+        reasoning: [
+          reason,
+          `Visual: ${v_c.toFixed(2)}, Context: ${c_rel.toFixed(2)}, ML: ${m_c !== null ? m_c.toFixed(2) : 'N/A'}, Previous: ${prev_s.toFixed(2)}`
+        ],
+        rule_activated: `IF Visual(${v_c.toFixed(2)}) & Context(${c_rel.toFixed(2)}) & ML(${m_c !== null ? m_c.toFixed(2) : 'N/A'}) THEN ${decision}`,
+        rules_fired: [
+          {
+            id: 'rule-core',
+            name: 'Fuzzy Decision Engine Core',
+            antecedent_strength: score,
+            consequent_decision: decisionOutput,
+            description: `Evaluated ${decision} with score ${score}`
+          }
+        ],
+        memberships: {
+          candidate_confidence: { low: this.low(score), medium: this.medium(score), high: this.high(score) },
+          confidence_gap: null,
+          text_similarity: { low: this.low(c_rel), medium: this.medium(c_rel), high: this.high(c_rel) },
+          dom_confidence: { low: this.low(c_rel), medium: this.medium(c_rel), high: this.high(c_rel) },
+          visual_confidence: { low: this.low(v_c), medium: this.medium(v_c), high: this.high(v_c) },
+          ml_confidence: m_c !== null ? { low: this.low(m_c), medium: this.medium(m_c), high: this.high(m_c) } : null,
+          ambiguity: { low: 0, medium: 0, high: 0 },
+          risk: { low: 1.0, medium: 0, high: 0 }
+        },
+        visual_confidence: v_c,
+        dom_confidence: c_rel,
+        text_similarity: c_rel,
+        ml_confidence: m_c,
+        risk_level: 0.1,
+        raw_score: Math.round(score * 10000) / 100,
+        reason
       };
     } else {
       const v_c = Math.max(0, Math.min(1, input.visualConfidence ?? 0.5));
@@ -720,6 +859,7 @@ export class FuzzyDecisionEngine {
 
     return {
       decision,
+      score: Math.round(decisionConfidence * 10000) / 10000,
       fuzzy_confidence: Math.round(decisionConfidence * 10000) / 10000,
       candidate_confidence: Math.round(c_s * 10000) / 10000,
       ambiguity_score,
@@ -751,6 +891,7 @@ export class FuzzyDecisionEngine {
     const reason = 'No candidate element detected for this target field. Rescan or re-analyze recommended.';
     return {
       decision: 'RETRY',
+      score: 0.10,
       fuzzy_confidence: 0.10,
       candidate_confidence: 0.0,
       ambiguity_score: 1.0,
@@ -797,3 +938,76 @@ export class FuzzyDecisionEngine {
 }
 
 export const fuzzyDecisionEngine = new FuzzyDecisionEngine();
+
+export interface CandidateForSelection {
+  element?: any;
+  visual_confidence?: number;
+  visualConfidence?: number;
+  context_relevance?: number;
+  contextRelevance?: number;
+  text_similarity?: number;
+  textSimilarity?: number;
+  ml_confidence?: number | null;
+  mlConfidence?: number | null;
+  previous_success?: number;
+  previousSuccess?: number;
+  dom_confidence?: number;
+  domConfidence?: number;
+  [key: string]: any;
+}
+
+export interface RankedCandidate {
+  element: any;
+  score: number;
+  decision: 'ACT' | 'REVIEW' | 'REJECT' | FuzzyDecisionOutput;
+  [key: string]: any;
+}
+
+export class CandidateSelector {
+  public fuzzy: FuzzyDecisionEngine;
+
+  constructor(engine?: FuzzyDecisionEngine) {
+    this.fuzzy = engine || new FuzzyDecisionEngine();
+  }
+
+  public rank(candidates: CandidateForSelection[]): RankedCandidate[] {
+    const results: RankedCandidate[] = [];
+
+    for (const candidate of candidates || []) {
+      const visual = candidate.visual_confidence ?? candidate.visualConfidence ?? 0;
+      const context = candidate.context_relevance ?? candidate.contextRelevance ?? candidate.text_similarity ?? candidate.textSimilarity ?? 0;
+      const ml = candidate.ml_confidence ?? candidate.mlConfidence ?? 0;
+      const history = candidate.previous_success ?? candidate.previousSuccess ?? candidate.dom_confidence ?? candidate.domConfidence ?? 0;
+
+      const result = this.fuzzy.evaluate(visual, context, ml, history);
+
+      results.push({
+        element: candidate.element !== undefined ? candidate.element : candidate,
+        score: result.score !== undefined ? result.score : result.fuzzy_confidence,
+        decision: result.decision,
+        ...candidate
+      });
+    }
+
+    return results.sort((a, b) => b.score - a.score);
+  }
+
+  public choose(candidates: CandidateForSelection[]): RankedCandidate | null {
+    const ranked = this.rank(candidates);
+
+    if (!ranked || ranked.length === 0) {
+      return null;
+    }
+
+    const best = ranked[0];
+
+    if (best.decision === 'ACT' || best.decision === 'EXECUTE') {
+      return best;
+    }
+
+    return null;
+  }
+}
+
+export const candidateSelector = new CandidateSelector(fuzzyDecisionEngine);
+

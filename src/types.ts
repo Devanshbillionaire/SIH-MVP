@@ -115,7 +115,7 @@ export interface FuzzyRuleActivationItem {
   id: string;
   name: string;
   antecedent_strength: number;
-  consequent_decision: 'EXECUTE' | 'VERIFY' | 'RETRY' | 'ASK_USER' | 'REJECT';
+  consequent_decision: 'EXECUTE' | 'VERIFY' | 'RETRY' | 'ASK_USER' | 'REJECT' | 'ACT' | 'REVIEW';
   description: string;
 }
 
@@ -128,7 +128,7 @@ export interface FuzzyDecision {
   candidate_confidence?: number;
   fuzzy_confidence: number;
   raw_score: number;
-  decision: 'EXECUTE' | 'VERIFY' | 'RETRY' | 'ASK_USER' | 'REJECT';
+  decision: 'EXECUTE' | 'VERIFY' | 'RETRY' | 'ASK_USER' | 'REJECT' | 'ACT' | 'REVIEW';
   rule_activated: string;
   rules_fired?: FuzzyRuleActivationItem[];
   ambiguity_score?: number;
@@ -148,7 +148,7 @@ export interface FieldMapping {
   user_value_preview: string;
   detected_field: string;
   confidence: number;
-  decision?: 'EXECUTE' | 'VERIFY' | 'ASK_USER' | 'RETRY' | 'REJECT';
+  decision?: 'EXECUTE' | 'VERIFY' | 'ASK_USER' | 'RETRY' | 'REJECT' | 'ACT' | 'REVIEW';
   ambiguity?: number;
   alternatives?: DisambiguationCandidate[];
   selected_candidate_id?: string;
@@ -298,7 +298,7 @@ export interface TaskPlanStep {
   sensitivity?: 'SAFE' | 'PERSONAL' | 'HIGHLY_SENSITIVE';
   execution?: 'LOCAL' | 'LOCAL_ONLY' | 'STANDARD';
   candidate_id?: string;
-  decision?: 'EXECUTE' | 'VERIFY' | 'RETRY' | 'ASK_USER' | 'REJECT';
+  decision?: 'EXECUTE' | 'VERIFY' | 'RETRY' | 'ASK_USER' | 'REJECT' | 'ACT' | 'REVIEW';
   decision_confidence?: number;
   blocked_reason?: string;
   requires_user_input?: boolean;

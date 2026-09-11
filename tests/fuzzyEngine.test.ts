@@ -4,7 +4,7 @@
  * confidence gaps, safety guardrails, and explainability.
  */
 
-import { FuzzyDecisionEngine, trimf, trapmf } from '../server/fuzzyEngine';
+import { FuzzyDecisionEngine, CandidateSelector, trimf, trapmf } from '../server/fuzzyEngine';
 import { ScoredCandidate } from '../server/elementDetector';
 
 function assert(condition: boolean, message: string) {
@@ -291,7 +291,60 @@ function runTests() {
     }
   }
 
-  console.log('\n🎉 ALL 10 FUZZY DECISION ENGINE ASSERTIONS PASSED!\n');
+  // Test 11: Core Fuzzy Evaluation Rule Base (User Reference Matching)
+  // visual_confidence = 0.88, context_relevance = 0.91, ml_confidence = 0.86, previous_success = 0.74
+  {
+    const result = engine.evaluate(0.88, 0.91, 0.86, 0.74);
+    assert(result.score === 0.7601, `Test 11: Fuzzy Score must be 0.7601, got: ${result.score}`);
+    assert(result.decision === 'ACT', `Test 11: Decision must be ACT, got: ${result.decision}`);
+  }
+
+  // Test 12: CandidateSelector Ranking and Decision-Based Selection
+  {
+    const selector = new CandidateSelector(engine);
+    const candidates = [
+      {
+        element: { tag: 'button', id: 'submit-btn', text: 'Submit' },
+        visual_confidence: 0.88,
+        context_relevance: 0.91,
+        ml_confidence: 0.86,
+        previous_success: 0.74
+      },
+      {
+        element: { tag: 'button', id: 'cancel-btn', text: 'Cancel' },
+        visual_confidence: 0.40,
+        context_relevance: 0.45,
+        ml_confidence: 0.35,
+        previous_success: 0.20
+      }
+    ];
+
+    const ranked = selector.rank(candidates);
+    assert(ranked.length === 2, 'Test 12: Ranked array length is 2');
+    assert(ranked[0].element.id === 'submit-btn', 'Test 12: Top candidate is submit-btn');
+    assert(ranked[0].score === 0.7601, `Test 12: Top candidate score is 0.7601, got: ${ranked[0].score}`);
+    assert(ranked[0].decision === 'ACT', `Test 12: Top candidate decision is ACT, got: ${ranked[0].decision}`);
+
+    const chosen = selector.choose(candidates);
+    assert(chosen !== null && chosen.element.id === 'submit-btn', 'Test 12: Choose selects top ACT candidate');
+
+    // Reject / Review candidate should not be chosen automatically
+    const weakCandidates = [
+      {
+        element: { tag: 'button', id: 'weak-btn' },
+        visual_confidence: 0.30,
+        context_relevance: 0.30,
+        ml_confidence: 0.30,
+        previous_success: 0.20
+      }
+    ];
+    const weakChosen = selector.choose(weakCandidates);
+    assert(weakChosen === null, 'Test 12: Weak candidate without ACT decision is not chosen');
+  }
+
+  console.log('\n🎉 ALL 12 FUZZY DECISION ENGINE ASSERTIONS PASSED!\n');
 }
 
 runTests();
+process.exit(0);
+

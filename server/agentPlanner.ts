@@ -1,5 +1,5 @@
 import { ElementDetector, DOMElementData, ScoredCandidate } from './elementDetector';
-import { FuzzyDecisionEngine, FuzzyEvaluationResult } from './fuzzyEngine';
+import { FuzzyDecisionEngine, FuzzyEvaluationResult, FuzzyDecisionOutput } from './fuzzyEngine';
 import { ActionVerifier, VerificationOutcome } from './verifier';
 import { interactionStore, LearningStats } from './interactionStore';
 import { getMLMetadata, MLModelMetadata } from './mlPredictor';
@@ -62,7 +62,7 @@ export interface FieldMapping {
   user_value_preview: string;
   detected_field: string;
   confidence: number;
-  decision?: 'EXECUTE' | 'VERIFY' | 'ASK_USER' | 'RETRY' | 'REJECT';
+  decision?: FuzzyDecisionOutput | 'EXECUTE' | 'VERIFY' | 'ASK_USER' | 'RETRY' | 'REJECT';
   ambiguity?: number;
   alternatives?: DisambiguationCandidate[];
   selected_candidate_id?: string;
