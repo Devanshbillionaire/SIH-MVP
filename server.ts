@@ -19,16 +19,58 @@ const PORT = 3000;
 async function startServer() {
   const app = express();
 
-  app.use(cors());
+  // Production vs Development CORS configuration
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (isProduction) {
+    const allowedOriginsEnv = process.env.ALLOWED_ORIGINS;
+    if (allowedOriginsEnv) {
+      const allowedOrigins = allowedOriginsEnv.split(',').map((o) => o.trim());
+      app.use(
+        cors({
+          origin: (origin, callback) => {
+            if (!origin || allowedOrigins.includes(origin)) {
+              callback(null, true);
+            } else {
+              callback(new Error('CORS policy: Access denied for this origin.'));
+            }
+          },
+          credentials: true
+        })
+      );
+    } else {
+      // Production without explicit ALLOWED_ORIGINS: block cross-origin requests
+      app.use(
+        cors({
+          origin: (origin, callback) => {
+            // Allow same-origin / server-to-server (origin header undefined)
+            if (!origin) {
+              callback(null, true);
+            } else {
+              callback(null, false);
+            }
+          },
+          credentials: true
+        })
+      );
+    }
+  } else {
+    // Development mode: permissive CORS for dev tooling and live previews
+    app.use(cors());
+  }
+
   app.use(express.json());
 
   // Static Assets: Screenshots, Demo Sites, and Automated Test Fixtures
   const staticPath = path.join(process.cwd(), 'static');
   const demoSitesPath = path.join(process.cwd(), 'demo-sites');
-  const fixturesPath = path.join(process.cwd(), 'tests', 'fixtures');
   app.use('/static', express.static(staticPath));
   app.use('/demo-sites', express.static(demoSitesPath));
-  app.use('/fixtures', express.static(fixturesPath));
+
+  // Test fixtures are restricted to development and testing environments only
+  if (!isProduction) {
+    const fixturesPath = path.join(process.cwd(), 'tests', 'fixtures');
+    app.use('/fixtures', express.static(fixturesPath));
+  }
 
   // 1. Health & Status
   app.get('/api/status', (req, res) => {
@@ -225,6 +267,16 @@ async function startServer() {
         return res.status(400).json({ success: false, error: 'Target URL is required for execution.' });
       }
 
+      // Pre-execution SSRF URL Validation
+      const validation = validateUrl(rawUrl);
+      if (!validation.valid || !validation.normalizedUrl) {
+        return res.status(400).json({
+          success: false,
+          error: validation.error || 'Invalid target URL provided.',
+          error_category: 'INVALID_TARGET'
+        });
+      }
+
       // Generate or reuse TaskPlan
       let plan = req.body?.plan || req.body?.task_plan;
       if (!plan) {
@@ -260,7 +312,59 @@ async function startServer() {
     }
   });
 
-  // 12. Full Perception, Intent Planning, ML Selection & Safe Execution Pipeline
+  // 12. External AI Disambiguation Gateway Endpoint (Phase 8/9.5)
+  app.post('/api/ai/disambiguate', async (req, res) => {
+    try {
+      const targetField = String(req.body?.target_field || req.body?.targetField || '').trim();
+      const rawCandidates = req.body?.candidates || req.body?.sanitized_candidates || [];
+      const pageTitle = req.body?.page_title || req.body?.pageTitle;
+
+      if (!targetField) {
+        return res.status(400).json({ success: false, error: 'Target field is required for disambiguation.' });
+      }
+
+      // Enforce zero-leak privacy boundary: reject highly sensitive credential fields from external AI
+      const classification = PrivacyGateway.classifyField(targetField, '');
+      if (classification.sensitivity === 'HIGHLY_SENSITIVE') {
+        return res.status(403).json({
+          success: false,
+          error: 'External AI reasoning is strictly forbidden for highly sensitive credential fields.',
+          source: 'LOCAL_FALLBACK'
+        });
+      }
+
+      // Ensure candidates are properly sanitized
+      const sanitizedCandidates = Array.isArray(rawCandidates)
+        ? rawCandidates.map((c: any) => ({
+            id: String(c.id || c.selector || ''),
+            tag: String(c.tag || 'input'),
+            type: c.type ? String(c.type) : undefined,
+            role: c.role ? String(c.role) : undefined,
+            placeholder: c.placeholder ? String(c.placeholder) : undefined,
+            ariaLabel: c.ariaLabel || c.aria_label ? String(c.ariaLabel || c.aria_label) : undefined,
+            text: c.text ? String(c.text).slice(0, 100) : undefined,
+            name: c.name ? String(c.name) : undefined
+          }))
+        : [];
+
+      const result = await ExternalAIService.disambiguateCandidate({
+        targetField,
+        sanitizedCandidates,
+        pageTitle
+      });
+
+      return res.json({ success: true, ...result });
+    } catch (err: any) {
+      console.error('[External AI Disambiguation Error]:', err);
+      return res.status(500).json({
+        success: false,
+        error: err?.message || 'External AI disambiguation error',
+        source: 'LOCAL_FALLBACK'
+      });
+    }
+  });
+
+  // 13. Full Perception, Intent Planning, ML Selection & Safe Execution Pipeline
   const handleTaskPerception = async (req: express.Request, res: express.Response) => {
     try {
       const rawUrl = String(req.body.url || req.body.target_url || '').trim();

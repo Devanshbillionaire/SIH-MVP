@@ -44,12 +44,12 @@ async function runLiveDemoVerification() {
     // Check UI elements for exact URL + Task + User Data + START TASK
     const urlInput = await page.$('#target-url-input');
     const taskInput = await page.$('#task-instruction-input');
-    const toggleUserDataBtn = await page.$('#toggle-user-data-btn');
+    const userDataInput = await page.$('#user-data-input');
     const startTaskBtn = await page.$('#btn-run-agent');
 
     assert(urlInput !== null, 'Target URL input field is present');
     assert(taskInput !== null, 'Task instruction textarea is present');
-    assert(toggleUserDataBtn !== null, 'User data toggle button is present');
+    assert(userDataInput !== null, 'Information to fill (user-data-input) field is present');
     assert(startTaskBtn !== null, 'START TASK button is present');
 
     const buttonText = await startTaskBtn.innerText();
@@ -75,8 +75,7 @@ async function runLiveDemoVerification() {
     // Enter Task Instruction
     await page.fill('#task-instruction-input', taskPrompt);
 
-    // Open and Enter User Data
-    await page.click('#toggle-user-data-btn');
+    // Enter User Data (immediately visible in MVP UI)
     await page.waitForSelector('#user-data-input', { state: 'visible', timeout: 5000 });
     await page.fill('#user-data-input', userDataText);
 

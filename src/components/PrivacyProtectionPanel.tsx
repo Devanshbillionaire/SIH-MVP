@@ -11,46 +11,68 @@ export const PrivacyProtectionPanel: React.FC<PrivacyProtectionPanelProps> = ({
   privacyResult,
   hasRun
 }) => {
-  // Baseline exemplary fallback lists if not run yet
-  const defaultSafeExamples = [
-    { key: 'Full Name', category: 'NAME', sensitivity: 'PERSONAL', reason: 'Personal identity name', allowed_for_external_ai: true },
-    { key: 'City / Location', category: 'GENERAL', sensitivity: 'LOW_SENSITIVITY', reason: 'Geographic attribute', allowed_for_external_ai: true },
-    { key: 'Country / Region', category: 'GENERAL', sensitivity: 'LOW_SENSITIVITY', reason: 'Geographic attribute', allowed_for_external_ai: true },
-    { key: 'Delivery Notes', category: 'ADDRESS', sensitivity: 'PERSONAL', reason: 'Non-credential instructions', allowed_for_external_ai: true }
-  ];
-
-  const defaultProtectedExamples = [
-    { key: 'Password / Passcode', category: 'PASSWORD', sensitivity: 'HIGHLY_SENSITIVE', reason: 'Explicit authentication credential', allowed_for_external_ai: false },
-    { key: 'SMS OTP / 2FA Code', category: 'OTP', sensitivity: 'HIGHLY_SENSITIVE', reason: 'One-time verification token', allowed_for_external_ai: false },
-    { key: 'Payment Card / CVV', category: 'PAYMENT', sensitivity: 'HIGHLY_SENSITIVE', reason: 'Financial payment credential', allowed_for_external_ai: false },
-    { key: 'API Keys / Tokens', category: 'API_KEY', sensitivity: 'HIGHLY_SENSITIVE', reason: 'Secret programmatic authorization token', allowed_for_external_ai: false }
-  ];
-
   const hasRealData = Boolean(hasRun && privacyResult);
 
+  if (!hasRealData) {
+    return (
+      <div id="privacy-protection-panel" className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 md:p-6 transition-all">
+        {/* Header */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-700">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-slate-900 tracking-tight">Privacy Protection Gateway</h3>
+              <p className="text-xs text-slate-500">Local PII boundary, on-device sanitization, and fail-closed confidential token isolation</p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <span className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <Lock className="w-3 h-3 text-emerald-600" />
+              <span>Local Engine Active</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Authentic Idle State */}
+        <div id="privacy-gateway-idle" className="py-10 text-center">
+          <div className="w-12 h-12 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center mx-auto text-emerald-600 mb-3">
+            <ShieldCheck className="w-6 h-6" />
+          </div>
+          <h4 className="text-sm font-semibold text-slate-800">Privacy Gateway Ready</h4>
+          <p className="text-xs text-slate-600 mt-1 max-w-md mx-auto leading-relaxed">
+            On-device privacy classification is active. Sensitive information will remain local.
+          </p>
+          <p className="text-[11px] text-slate-400 mt-2 max-w-sm mx-auto">
+            Run a task to analyze target form fields and enforce zero-leak isolation boundaries in real time.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const safeItems: (PrivacyAnalyzedField | { key: string; category?: string; sensitivity?: string; reason?: string; allowed_for_external_ai?: boolean })[] =
-    hasRealData && privacyResult?.safe_data && privacyResult.safe_data.length > 0
+    privacyResult?.safe_data && privacyResult.safe_data.length > 0
       ? privacyResult.safe_data
-      : (hasRealData && privacyResult?.safe_fields && privacyResult.safe_fields.length > 0)
+      : (privacyResult?.safe_fields && privacyResult.safe_fields.length > 0)
         ? privacyResult.safe_fields.map((f) => ({ key: f, category: 'GENERAL', sensitivity: 'LOW_SENSITIVITY', reason: 'Standard field attribute', allowed_for_external_ai: true }))
-        : defaultSafeExamples;
+        : [];
 
   const protectedItems: (PrivacyAnalyzedField | { key: string; category?: string; sensitivity?: string; reason?: string; allowed_for_external_ai?: boolean })[] =
-    hasRealData && privacyResult?.protected_data && privacyResult.protected_data.length > 0
+    privacyResult?.protected_data && privacyResult.protected_data.length > 0
       ? privacyResult.protected_data
-      : (hasRealData && privacyResult?.protected_fields && privacyResult.protected_fields.length > 0)
+      : (privacyResult?.protected_fields && privacyResult.protected_fields.length > 0)
         ? privacyResult.protected_fields.map((f) => ({ key: f, category: 'PASSWORD', sensitivity: 'HIGHLY_SENSITIVE', reason: 'Sensitive field isolated locally', allowed_for_external_ai: false }))
-        : defaultProtectedExamples;
+        : [];
 
-  const totalAnalyzed = hasRealData && privacyResult?.analyzed_count !== undefined
+  const totalAnalyzed = privacyResult?.analyzed_count !== undefined
     ? privacyResult.analyzed_count
-    : (hasRealData ? safeItems.length + protectedItems.length : 8);
+    : safeItems.length + protectedItems.length;
 
-  const isBlocked = hasRealData
-    ? (privacyResult?.external_ai_access === 'BLOCKED_FOR_PROTECTED' || protectedItems.length > 0)
-    : true;
-
-  const isFailed = hasRealData && privacyResult?.scan_status === 'failed';
+  const isBlocked = privacyResult?.external_ai_access === 'BLOCKED_FOR_PROTECTED' || protectedItems.length > 0;
+  const isFailed = privacyResult?.scan_status === 'failed';
 
   return (
     <div id="privacy-protection-panel" className="bg-white rounded-xl border border-slate-200/90 shadow-xs p-5 md:p-6 transition-all">
@@ -63,12 +85,10 @@ export const PrivacyProtectionPanel: React.FC<PrivacyProtectionPanelProps> = ({
           <div>
             <div className="flex items-center space-x-2">
               <h3 className="text-base font-semibold text-slate-900 tracking-tight">Privacy Protection Gateway</h3>
-              {hasRealData && (
-                <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
-                  <Check className="w-3 h-3 text-emerald-600" />
-                  <span>{totalAnalyzed} values analyzed</span>
-                </span>
-              )}
+              <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                <Check className="w-3 h-3 text-emerald-600" />
+                <span>{totalAnalyzed} values analyzed</span>
+              </span>
             </div>
             <p className="text-xs text-slate-500">Local PII boundary, on-device sanitization, and fail-closed confidential token isolation</p>
           </div>

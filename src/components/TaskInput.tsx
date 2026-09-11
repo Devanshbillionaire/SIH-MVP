@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Globe, Terminal, Play, RotateCcw, ShieldCheck, Loader2, Database, ChevronDown, ChevronUp } from 'lucide-react';
+import React from 'react';
+import { Globe, Terminal, Play, RotateCcw, ShieldCheck, Loader2 } from 'lucide-react';
 
 interface TaskInputProps {
   url: string;
@@ -26,8 +26,6 @@ export const TaskInput: React.FC<TaskInputProps> = ({
   isRunning,
   disabled = false
 }) => {
-  const [showUserDataSection, setShowUserDataSection] = useState<boolean>(Boolean(userData));
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isRunning && url.trim()) {
@@ -72,10 +70,10 @@ export const TaskInput: React.FC<TaskInputProps> = ({
           </div>
         </div>
 
-        {/* 2. Natural Language Task Instruction */}
+        {/* 2. What should I do? */}
         <div>
           <label htmlFor="task-instruction-input" className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-            Task Instruction (Natural Language)
+            What should I do?
           </label>
           <div className="relative rounded-lg shadow-2xs">
             <div className="absolute top-3 left-3 flex items-center pointer-events-none text-slate-400">
@@ -93,35 +91,28 @@ export const TaskInput: React.FC<TaskInputProps> = ({
           </div>
         </div>
 
-        {/* 3. Separate User Data (Requirement 5: Separate Task Instruction from User Data) */}
+        {/* 3. Information to fill — Immediately Visible */}
         <div>
-          <button
-            type="button"
-            id="toggle-user-data-btn"
-            onClick={() => setShowUserDataSection(!showUserDataSection)}
-            className="inline-flex items-center space-x-1.5 text-xs font-medium text-slate-600 hover:text-indigo-600 transition-colors py-1"
-          >
-            <Database className="w-3.5 h-3.5" />
-            <span>{showUserDataSection ? 'Hide User Data fields' : 'Add separate User Data (Key-Values)'}</span>
-            {showUserDataSection ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-          </button>
-
-          {showUserDataSection && (
-            <div className="mt-2 relative rounded-lg shadow-2xs">
-              <textarea
-                id="user-data-input"
-                rows={3}
-                value={userData}
-                onChange={(e) => onUserDataChange(e.target.value)}
-                placeholder="Name = Devansh&#10;Email = devansh@example.com&#10;Phone = +1-555-0199"
-                disabled={isRunning || disabled}
-                className="block w-full p-3 bg-slate-50/70 border border-slate-300/80 rounded-lg text-xs font-mono text-slate-800 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 focus:bg-white transition-all resize-y disabled:opacity-60"
-              />
-              <p className="text-[11px] text-slate-400 mt-1">
-                Data separated from instructions: sensitive values are routed to local vault and never sent to external models.
-              </p>
-            </div>
-          )}
+          <div className="flex items-center justify-between mb-1.5">
+            <label htmlFor="user-data-input" className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+              Information to fill
+            </label>
+            <span className="text-[11px] text-slate-400 font-mono">Key = Value or plain text</span>
+          </div>
+          <div className="relative rounded-lg shadow-2xs">
+            <textarea
+              id="user-data-input"
+              rows={3}
+              value={userData}
+              onChange={(e) => onUserDataChange(e.target.value)}
+              placeholder="Name = Devansh Kumar&#10;Email = devansh@example.com&#10;Phone = +1-555-0199"
+              disabled={isRunning || disabled}
+              className="block w-full p-3 bg-slate-50/70 border border-slate-300/80 rounded-lg text-xs font-mono text-slate-800 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 focus:bg-white transition-all resize-y disabled:opacity-60"
+            />
+          </div>
+          <p className="text-[11px] text-slate-400 mt-1">
+            Data separated from instructions: sensitive values are routed to local vault and never sent to external models.
+          </p>
         </div>
 
         {/* Privacy Notice Banner */}

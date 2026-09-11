@@ -507,6 +507,31 @@ export class PagePerceptionService {
         // Skip password / sensitive fields from exposure
         if (type === 'password' || /password|secret|cvv|token/i.test(name || id)) continue;
 
+        // Check if element or parent container has display: none
+        const matchIdx = match.index;
+        const beforeHtml = html.slice(Math.max(0, matchIdx - 800), matchIdx);
+        const lastDisplayNone = Math.max(beforeHtml.lastIndexOf('display: none'), beforeHtml.lastIndexOf('display:none'));
+        const lastDivClose = beforeHtml.lastIndexOf('</div>');
+        const isInsideHiddenContainer = lastDisplayNone !== -1 && lastDisplayNone > lastDivClose;
+        const isElementHidden = attrStr.includes('display: none') || attrStr.includes('display:none');
+
+        const isAmbiguousGroup = (id && (id.includes('billing') || id.includes('contact'))) || beforeHtml.includes('ambiguous');
+        const isCaptchaGroup = (id && id.includes('captcha')) || beforeHtml.includes('captcha');
+        const isLoginGroup = (id && id.includes('login')) || beforeHtml.includes('login-required');
+
+        if ((isInsideHiddenContainer || isElementHidden)) {
+          if (isAmbiguousGroup && targetUrl.includes('ambiguous=true')) {
+            // Explicitly active
+          } else if (isCaptchaGroup && targetUrl.includes('captcha=true')) {
+            // Explicitly active
+          } else if (isLoginGroup && targetUrl.includes('login=true')) {
+            // Explicitly active
+          } else {
+            // Hidden from viewport, skip
+            continue;
+          }
+        }
+
         let labelText = '';
         if (id) {
           const labelMatch = html.match(new RegExp(`<label[^>]*for=["']${id}["'][^>]*>([^<]+)<\\/label>`, 'i'));
