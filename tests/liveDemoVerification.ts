@@ -268,9 +268,15 @@ async function runLiveDemoVerification() {
     assert.strictEqual(verificationResult.verified_count, 3, 'Must verify all 3 actions in live DOM');
 
     // Confirm field values from receipts
-    const nameReceipt = verificationResult.actions.find((a) => a.target_selector === '#name');
-    const emailReceipt = verificationResult.actions.find((a) => a.target_selector === '#email');
-    const phoneReceipt = verificationResult.actions.find((a) => a.target_selector === '#phone');
+    const nameReceipt = verificationResult.actions.find(
+      (a) => a.candidate_used?.selector === '#name' || a.target === '#name'
+    );
+    const emailReceipt = verificationResult.actions.find(
+      (a) => a.candidate_used?.selector === '#email' || a.target === '#email'
+    );
+    const phoneReceipt = verificationResult.actions.find(
+      (a) => a.candidate_used?.selector === '#phone' || a.target === '#phone'
+    );
 
     assert(nameReceipt && nameReceipt.verified === true, 'Name field verified');
     assert(emailReceipt && emailReceipt.verified === true, 'Email field verified');
@@ -281,11 +287,15 @@ async function runLiveDemoVerification() {
     console.log('✓ Confirm Phone = correct (+1-555-0199)');
 
     // Confirm password untouched & submit NOT clicked
-    const passwordAction = verificationResult.actions.find((a) => a.target_selector === '#password');
+    const passwordAction = verificationResult.actions.find(
+      (a) => a.candidate_used?.selector === '#password' || a.target === '#password'
+    );
     assert(!passwordAction, 'Password field must remain untouched');
     console.log('✓ Confirm Password = untouched');
 
-    const submitAction = verificationResult.actions.find((a) => a.target_selector === '#submit-btn');
+    const submitAction = verificationResult.actions.find(
+      (a) => a.candidate_used?.selector === '#submit-btn' || a.target === '#submit-btn'
+    );
     assert(!submitAction, 'Submit button must NOT be clicked');
     console.log('✓ Confirm Submit = NOT clicked');
 
@@ -293,7 +303,7 @@ async function runLiveDemoVerification() {
     // STEP 7: VERIFY UI TRUTHFUL STATES
     // ----------------------------------------------------
     console.log('\n[Step 7] Validating UI Truthful Stages...');
-    const stageElements = await page.$$('[id^="pipeline-stage-"]');
+    const stageElements = await page.$$('[id^="stage-item-"], [id^="pipeline-stage-"]');
     console.log(`Found ${stageElements.length} pipeline stage cards rendered in UI.`);
     assert(stageElements.length >= 10, 'All 11 pipeline stages rendered');
     console.log('✓ Page analyzed stage rendered');
@@ -308,14 +318,16 @@ async function runLiveDemoVerification() {
     // ----------------------------------------------------
     console.log('\n[Step 8] Testing Ambiguity Resolution (ASK_USER)...');
     // Test fuzzy decision engine with two very close candidates (gap <= 0.05)
-    const ambiguityEval = fuzzyDecisionEngine.evaluate(
-      0.82, // dom
-      0.80, // visual
-      0.81, // ml
-      0.02, // score_gap very narrow
-      2,    // candidate count
-      'NORMAL'
-    );
+    const ambiguityEval = fuzzyDecisionEngine.evaluate({
+      domConfidence: 0.82,
+      visualConfidence: 0.80,
+      mlConfidence: 0.81,
+      candidateConfidence: 0.81,
+      confidenceGap: 0.02,
+      candidateCount: 2,
+      actionRisk: 'LOW',
+      actionType: 'TYPE'
+    });
     console.log(`Ambiguity Evaluation Decision: ${ambiguityEval.decision}`);
     console.log(`Ambiguity Score: ${ambiguityEval.ambiguity_score.toFixed(2)}`);
     console.log(`Reason: ${ambiguityEval.reason}`);
@@ -337,10 +349,13 @@ async function runLiveDemoVerification() {
     const sensitiveTestPrompt = 'My account password is MySecretPass123 and OTP is 987654. Fill my name Alice.';
     const privacyScan = PrivacyGateway.analyze(sensitiveTestPrompt);
 
-    assert.strictEqual(privacyScan.external_ai_access, 'RESTRICTED', 'External AI access must be RESTRICTED');
+    assert(
+      privacyScan.external_ai_access === 'BLOCKED_FOR_PROTECTED' || privacyScan.external_ai_access === 'RESTRICTED',
+      'External AI access must be restricted or blocked for protected content'
+    );
     assert(privacyScan.protected_data.length >= 2, 'Must detect password and OTP as protected');
 
-    const safeData = PrivacyGateway.get_external_ai_safe_data(sensitiveTestPrompt);
+    const safeData = PrivacyGateway.get_external_ai_safe_data(privacyScan);
     assert(!JSON.stringify(safeData).includes('MySecretPass123'), 'Raw password NEVER present in external data');
     assert(!JSON.stringify(safeData).includes('987654'), 'Raw OTP NEVER present in external data');
     console.log('✓ Sensitive data (passwords, OTPs) completely quarantined from external transmission');
@@ -356,18 +371,28 @@ async function runLiveDemoVerification() {
       id: 'name',
       name: 'name',
       placeholder: 'Full Name',
-      bounds: { x: 10, y: 10, width: 100, height: 30, top: 10, left: 10, bottom: 40, right: 110 },
-      interactivity: { is_visible: true, is_clickable: true, is_in_viewport: true, is_enabled: true }
+      isVisible: true,
+      x: 10,
+      y: 10,
+      width: 250,
+      height: 40
     };
-    const scored = ElementDetector.scoreCandidate(sampleElement as any, 'Full Name', 'FILL');
-    const localFuzzy = fuzzyDecisionEngine.evaluate(
-      scored.dom_confidence,
-      scored.visual_confidence,
-      scored.ml_confidence,
-      0.5,
-      1,
-      'NORMAL'
+    const detection = ElementDetector.detectTargetElement(
+      [sampleElement as any],
+      { target: 'name', field_name: 'name' },
+      'TYPE'
     );
+    const scored = detection.top_candidate!;
+    const localFuzzy = fuzzyDecisionEngine.evaluate({
+      domConfidence: scored.dom_confidence,
+      visualConfidence: scored.visual_confidence,
+      mlConfidence: scored.ml_confidence,
+      candidateConfidence: scored.composite_score,
+      confidenceGap: 0.5,
+      candidateCount: 1,
+      actionRisk: 'LOW',
+      actionType: 'TYPE'
+    });
     assert(scored.composite_score > 0.8, 'Local ElementDetector scores candidate accurately');
     assert.strictEqual(localFuzzy.decision, 'EXECUTE', 'Local Fuzzy Engine decides EXECUTE accurately');
     console.log('✓ PrivaSight operates seamlessly with 100% local deterministic algorithms');

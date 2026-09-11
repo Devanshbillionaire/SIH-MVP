@@ -6,12 +6,14 @@ interface FieldMappingPanelProps {
   mappings: FieldMapping[];
   hasRun: boolean;
   onSelectCandidate?: (mappingIndex: number, candidate: DisambiguationCandidate) => void;
+  onOpenDisambiguation?: (mappingIndex: number) => void;
 }
 
 export const FieldMappingPanel: React.FC<FieldMappingPanelProps> = ({
   mappings,
   hasRun,
-  onSelectCandidate
+  onSelectCandidate,
+  onOpenDisambiguation
 }) => {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
@@ -79,10 +81,15 @@ export const FieldMappingPanel: React.FC<FieldMappingPanelProps> = ({
                     <span className="font-semibold text-slate-800 flex items-center space-x-1.5">
                       <span>{m.user_field}</span>
                       {isAmbiguous && (
-                        <span className="inline-flex items-center space-x-0.5 text-[10px] text-amber-700 font-medium px-1.5 py-0.2 rounded bg-amber-100 border border-amber-300">
+                        <button
+                          type="button"
+                          id={`btn-disambiguate-${idx}`}
+                          onClick={() => onOpenDisambiguation ? onOpenDisambiguation(idx) : toggleExpand(idx)}
+                          className="inline-flex items-center space-x-0.5 text-[10px] text-amber-800 font-medium px-1.5 py-0.5 rounded bg-amber-100 hover:bg-amber-200 border border-amber-300 transition-colors cursor-pointer"
+                        >
                           <HelpCircle className="w-2.5 h-2.5" />
                           <span>Disambiguate</span>
-                        </span>
+                        </button>
                       )}
                     </span>
                     <span className="text-[11px] text-slate-500 font-mono truncate block">

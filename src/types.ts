@@ -287,6 +287,7 @@ export interface TaskPlanStep {
   target_description?: string;
   target_element?: Partial<DetectedField>;
   value?: string;
+  value_to_input?: string;
   required_confidence?: number;
   sensitivity?: 'SAFE' | 'PERSONAL' | 'HIGHLY_SENSITIVE';
   execution?: 'LOCAL' | 'LOCAL_ONLY' | 'STANDARD';

@@ -12,6 +12,7 @@ import { TaskPlanPanel } from './components/TaskPlanPanel';
 import { ActivityPage } from './components/ActivityPage';
 import { LearningPage } from './components/LearningPage';
 import { SettingsPage } from './components/SettingsPage';
+import { DisambiguationModal } from './components/DisambiguationModal';
 
 import {
   NavigationTab,
@@ -86,6 +87,10 @@ export function App() {
 
   // Activity History State
   const [activities, setActivities] = useState<ActivityItem[]>([]);
+
+  // Disambiguation Modal State
+  const [isDisambiguationOpen, setIsDisambiguationOpen] = useState<boolean>(false);
+  const [disambiguationMappingIndex, setDisambiguationMappingIndex] = useState<number>(0);
 
   // Settings State
   const [settings, setSettings] = useState<AppSettings>({
@@ -224,6 +229,14 @@ export function App() {
       setActivities((prev) => [newActivity, ...prev]);
 
       const hasAmbiguity = response.field_mappings?.some((m: any) => m.decision === 'ASK_USER') || response.fuzzy_decision?.decision === 'ASK_USER';
+
+      if (hasAmbiguity) {
+        const ambIdx = response.field_mappings?.findIndex((m: any) => m.decision === 'ASK_USER' || (m.alternatives && m.alternatives.length > 1));
+        if (ambIdx !== undefined && ambIdx !== -1) {
+          setDisambiguationMappingIndex(ambIdx);
+          setIsDisambiguationOpen(true);
+        }
+      }
 
       // CHAIN EXECUTION: If plan is READY and not blocked by ambiguous candidate choices, execute directly
       if (response.task_plan?.status === 'READY' && !hasAmbiguity) {
@@ -418,6 +431,8 @@ export function App() {
     };
     setFieldMappings(updatedMappings);
 
+    setIsDisambiguationOpen(false);
+
     // Compute feedback features for selected vs rejected candidates
     const selectedFeatures = [
       candidate.visual_confidence || 0.85,
@@ -430,20 +445,89 @@ export function App() {
       .map((alt) => [alt.visual_confidence || 0.5, alt.dom_confidence || 0.5, alt.text_similarity || 0.5]);
 
     try {
-      await submitLearningFeedback({
+      submitLearningFeedback({
         intent: targetMapping.user_field,
         selected_features: selectedFeatures,
         rejected_features_list: rejectedFeaturesList,
         outcome: 'USER_CORRECTION',
         element_type: candidate.tag || 'input',
         action_type: 'fill'
-      });
-
-      // Refresh learning stats to reflect the feedback sample
-      const newStats = await getLearningStats();
-      setLearningStats(newStats);
+      }).then(() => getLearningStats().then(setLearningStats)).catch(console.error);
     } catch (err) {
       console.error('Failed to submit learning feedback for candidate disambiguation:', err);
+    }
+
+    // TASK 4: RESUME EXECUTION THROUGH COMPLETE SAFETY PIPELINE
+    const targetUrl = url.trim() || perception?.url || '';
+    if (targetUrl && taskPlan) {
+      setIsExecutingPlan(true);
+      setStages((prev) => prev.map(s => s.id === 'stage-9' ? { ...s, status: 'active' as const, description: 'Executing form actions in browser...' } : s));
+
+      const selectedCandidatesMap: Record<string, string> = {};
+      updatedMappings.forEach(m => {
+        if (m.selected_candidate_id) {
+          selectedCandidatesMap[m.user_field] = m.selected_candidate_id;
+          selectedCandidatesMap[m.user_field.toLowerCase()] = m.selected_candidate_id;
+        }
+      });
+
+      const combinedInfo = userData.trim()
+        ? `${task.trim()}\n\nUser Data:\n${userData.trim()}`
+        : (task.trim() || information.trim());
+
+      try {
+        const execRes = await executeAgentPlan({
+          url: targetUrl,
+          plan: {
+            ...taskPlan,
+            status: 'READY'
+          },
+          user_data: combinedInfo,
+          task_id: `task_${Date.now()}`,
+          user_selected_candidates: selectedCandidatesMap
+        });
+
+        const execResult = execRes.result || execRes.execution_result;
+        if (execResult) {
+          setExecutionResult(execResult);
+          if (execResult.verification) {
+            setVerification(execResult.verification);
+          }
+
+          setStages((prev) => prev.map(s => {
+            if (s.id === 'stage-9') {
+              return {
+                ...s,
+                status: execResult.status === 'SUCCESS' ? 'completed' as const : (execResult.status === 'PARTIAL_SUCCESS' ? 'warning' as const : 'failed' as const),
+                description: `Executed ${execResult.completed_actions}/${execResult.total_actions} actions safely.`
+              };
+            }
+            if (s.id === 'stage-10') {
+              return {
+                ...s,
+                status: execResult.status === 'SUCCESS' ? 'completed' as const : 'warning' as const,
+                description: execResult.summary || 'DOM verification complete'
+              };
+            }
+            if (s.id === 'stage-11') {
+              return {
+                ...s,
+                status: 'completed' as const,
+                description: 'Interaction outcome verified and logged locally.'
+              };
+            }
+            return s;
+          }));
+
+          const refreshedStats = await getLearningStats();
+          setLearningStats(refreshedStats);
+        }
+      } catch (err: any) {
+        console.error('Resumed execution error:', err);
+        setStages((prev) => prev.map(s => s.id === 'stage-9' ? { ...s, status: 'warning' as const, description: err?.message || 'Execution failed' } : s));
+      } finally {
+        setIsExecutingPlan(false);
+      }
     }
   };
 
@@ -500,6 +584,10 @@ export function App() {
                   mappings={fieldMappings}
                   hasRun={hasRun}
                   onSelectCandidate={handleSelectCandidate}
+                  onOpenDisambiguation={(idx) => {
+                    setDisambiguationMappingIndex(idx);
+                    setIsDisambiguationOpen(true);
+                  }}
                 />
               </div>
 
@@ -528,6 +616,16 @@ export function App() {
                 />
               </div>
             </div>
+
+            {/* Interactive Disambiguation Modal */}
+            <DisambiguationModal
+              isOpen={isDisambiguationOpen}
+              onClose={() => setIsDisambiguationOpen(false)}
+              mapping={fieldMappings[disambiguationMappingIndex] || null}
+              mappingIndex={disambiguationMappingIndex}
+              onSelectCandidate={handleSelectCandidate}
+              isExecuting={isExecutingPlan}
+            />
           </div>
         )}
 
