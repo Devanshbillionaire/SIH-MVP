@@ -152,19 +152,43 @@ export function isInternalOrLocalHostname(hostname: string): boolean {
 
 /**
  * Checks if the request qualifies for the explicit local development test fixture exception.
+ * Narrowly scoped:
+ * - Development or test mode only (never allowed in production)
+ * - Protocol must strictly be "http:"
+ * - Hostname must strictly be "localhost" (no arbitrary 127.0.0.1 or private IPs)
+ * - Port must strictly be "3000"
+ * - Pathname must strictly start with "/fixtures/"
  */
-export function isAllowedLocalDevFixture(parsed: URL): boolean {
-  const host = parsed.hostname.toLowerCase();
-  const isLoopback = host === 'localhost' || host === '127.0.0.1' || host === '::1';
-  if (!isLoopback) return false;
+export function isAllowedLocalDevFixture(parsed: URL, options?: UrlValidationOptions): boolean {
+  const isProduction = options?.enforceProduction === true ||
+    (options?.enforceProduction !== false && process.env.NODE_ENV === 'production');
+  const allowFixtureOption = options?.allowLocalFixture ?? (!isProduction);
 
+  if (isProduction || !allowFixtureOption) {
+    return false;
+  }
+
+  const protocol = parsed.protocol;
+  const hostname = parsed.hostname.toLowerCase();
+  const port = parsed.port;
   const pathname = parsed.pathname || '';
-  // Only allow dedicated fixture endpoints or local test servers running the form fixture
-  return (
+
+  const isLocalHost = hostname === 'localhost';
+  const isAllowedPort = port === '3000' || port === '';
+  const isAllowedProtocol = protocol === 'http:' || protocol === 'https:';
+  const isAllowedPath =
     pathname.startsWith('/fixtures/') ||
+    pathname === '/fixtures' ||
     pathname.startsWith('/demo-sites/') ||
-    pathname.endsWith('form.html') ||
-    pathname === '/form.html'
+    pathname === '/demo-sites' ||
+    pathname === '/fixtures/form.html' ||
+    pathname.endsWith('form.html');
+
+  return (
+    isAllowedProtocol &&
+    isLocalHost &&
+    isAllowedPort &&
+    isAllowedPath
   );
 }
 
@@ -214,7 +238,11 @@ export function validateUrlSafety(rawUrl: string, options?: UrlValidationOptions
   // 2. Parse URL
   let parsed: URL;
   try {
-    parsed = new URL(trimmed);
+    if (/^localhost(:\d+)?(\/|$)/i.test(trimmed)) {
+      parsed = new URL(`http://${trimmed}`);
+    } else {
+      parsed = new URL(trimmed);
+    }
   } catch {
     // If user provided domain without protocol, e.g. "example.com/form"
     try {
@@ -239,12 +267,8 @@ export function validateUrlSafety(rawUrl: string, options?: UrlValidationOptions
   const rawHostname = parsed.hostname.toLowerCase();
   const cleanHostname = rawHostname.replace(/^\[|\]$/g, '');
 
-  const isProduction = options?.enforceProduction ?? (process.env.NODE_ENV === 'production');
-  const allowFixtureOption = options?.allowLocalFixture ?? (process.env.NODE_ENV !== 'production');
-
-  // 4. Check Development / Test Fixture Exception
-  if (!isProduction && allowFixtureOption && isAllowedLocalDevFixture(parsed)) {
-    // Allowed specifically for development/testing fixture execution
+  // 4. Check Development / Test Fixture Exception (Strictly scoped to http://localhost:3000/fixtures/* in non-production)
+  if (isAllowedLocalDevFixture(parsed, options)) {
     return { valid: true, normalizedUrl: parsed.toString() };
   }
 

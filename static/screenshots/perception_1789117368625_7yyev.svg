@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f8fafc" />
+      <stop offset="100%" stop-color="#f1f5f9" />
+    </linearGradient>
+  </defs>
+  <rect width="1440" height="900" fill="url(#bg)" />
+  <!-- Browser Header Bar -->
+  <rect width="1440" height="54" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" />
+  <circle cx="28" cy="27" r="6" fill="#f87171" />
+  <circle cx="48" cy="27" r="6" fill="#fbbf24" />
+  <circle cx="68" cy="27" r="6" fill="#34d399" />
+  <rect x="120" y="12" width="600" height="30" rx="6" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1" />
+  <text x="140" y="32" font-family="system-ui, sans-serif" font-size="12" fill="#475569">http://localhost:3000/fixtures/form.html</text>
+  <!-- Form Card Content -->
+  <rect x="220" y="80" width="800" height="946" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.03))" />
+  <text x="260" y="125" font-family="system-ui, sans-serif" font-size="18" font-weight="bold" fill="#0f172a">Safe Form Execution Test Fixture - PrivaSight</text>
+  <text x="260" y="148" font-family="system-ui, sans-serif" font-size="12" fill="#64748b">Detected interactive form structure via DOM perception service</text>
+  
+    <g>
+      <text x="260" y="189" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#334155">Full Name</text>
+      <rect x="260" y="195" width="480" height="32" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+      <text x="272" y="215" text-anchor="start" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">e.g. Alex Johnson</text>
+    </g>
+    <g>
+      <text x="260" y="247" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#334155">Email Address</text>
+      <rect x="260" y="253" width="480" height="32" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+      <text x="272" y="273" text-anchor="start" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">alex@example.com</text>
+    </g>
+    <g>
+      <text x="260" y="305" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#334155">Phone Number</text>
+      <rect x="260" y="311" width="480" height="32" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+      <text x="272" y="331" text-anchor="start" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">+1-555-0199</text>
+    </g>
+    <g>
+      <text x="260" y="363" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#334155">Mailing Address</text>
+      <rect x="260" y="369" width="480" height="32" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+      <text x="272" y="389" text-anchor="start" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">Street, Suite, City</text>
+    </g>
+    <g>
+      <text x="260" y="421" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#334155">Country</text>
+      <rect x="260" y="427" width="480" height="32" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+      <text x="272" y="447" text-anchor="start" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8"></text>
+    </g>
+    <g>
+      <text x="260" y="479" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#334155">gender</text>
+      <rect x="260" y="485" width="480" height="32" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+      <text x="272" y="505" text-anchor="start" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8"></text>
+    </g>
+    <g>
+      <text x="260" y="537" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#334155">gender</text>
+      <rect x="260" y="543" width="480" height="32" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+      <text x="272" y="563" text-anchor="start" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8"></text>
+    </g>
+    <g>
+      <text x="260" y="595" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#334155">gender</text>
+      <rect x="260" y="601" width="480" height="32" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+      <text x="272" y="621" text-anchor="start" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8"></text>
+    </g>
+    <g>
+      <text x="260" y="653" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#334155">Temporary Verification Code</text>
+      <rect x="260" y="659" width="480" height="32" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+      <text x="272" y="679" text-anchor="start" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">123456</text>
+    </g>
+    <g>
+      <text x="260" y="711" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#334155">I agree to the Terms and Conditions and Privacy Policy</text>
+      <rect x="260" y="717" width="480" height="32" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+      <text x="272" y="737" text-anchor="start" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8"></text>
+    </g>
+    <g>
+      <text x="260" y="769" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#334155">submit-btn</text>
+      <rect x="260" y="775" width="160" height="32" rx="6" fill="#4f46e5" stroke="#4338ca" stroke-width="1" />
+      <text x="340" y="795" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="#ffffff">submit-btn</text>
+    </g>
+    <g>
+      <text x="260" y="827" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#334155">pay-btn</text>
+      <rect x="260" y="833" width="160" height="32" rx="6" fill="#4f46e5" stroke="#4338ca" stroke-width="1" />
+      <text x="340" y="853" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="#ffffff">pay-btn</text>
+    </g>
+    <g>
+      <text x="260" y="885" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#334155">delete-btn</text>
+      <rect x="260" y="891" width="160" height="32" rx="6" fill="#4f46e5" stroke="#4338ca" stroke-width="1" />
+      <text x="340" y="911" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="#ffffff">delete-btn</text>
+    </g>
+</svg>

@@ -25,10 +25,20 @@ let testServer: http.Server;
 let testBaseUrl: string;
 
 async function startFixtureServer(): Promise<string> {
-  return new Promise((resolve) => {
+  // Check if controlled dev server fixture is already responding on port 3000
+  try {
+    const res = await fetch('http://localhost:3000/fixtures/form.html');
+    if (res.ok) {
+      testBaseUrl = 'http://localhost:3000/fixtures/form.html';
+      console.log(`[Test Server] Using active dev server fixture at ${testBaseUrl}`);
+      return testBaseUrl;
+    }
+  } catch {}
+
+  return new Promise((resolve, reject) => {
     testServer = http.createServer((req, res) => {
       const urlPath = req.url?.split('?')[0] || '';
-      if (urlPath === '/' || urlPath === '/form.html' || urlPath === '/form') {
+      if (urlPath === '/' || urlPath === '/form.html' || urlPath.startsWith('/fixtures/')) {
         const fixturePath = path.join(process.cwd(), 'tests', 'fixtures', 'form.html');
         const content = fs.readFileSync(fixturePath, 'utf-8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
@@ -39,10 +49,18 @@ async function startFixtureServer(): Promise<string> {
       }
     });
 
-    testServer.listen(0, '127.0.0.1', () => {
-      const addr = testServer.address() as any;
-      const port = addr.port;
-      testBaseUrl = `http://127.0.0.1:${port}/form.html`;
+    testServer.once('error', (err: any) => {
+      if (err.code === 'EADDRINUSE') {
+        // Port 3000 is occupied, assume server is serving fixtures
+        testBaseUrl = 'http://localhost:3000/fixtures/form.html';
+        resolve(testBaseUrl);
+      } else {
+        reject(err);
+      }
+    });
+
+    testServer.listen(3000, 'localhost', () => {
+      testBaseUrl = 'http://localhost:3000/fixtures/form.html';
       console.log(`[Test Server] Running fixture server at ${testBaseUrl}`);
       resolve(testBaseUrl);
     });

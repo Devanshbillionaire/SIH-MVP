@@ -151,7 +151,7 @@ export const PagePerceptionPanel: React.FC<PagePerceptionPanelProps> = ({
                 const hasPos = el.x !== undefined && el.y !== undefined && el.width !== undefined && el.height !== undefined;
 
                 return (
-                  <div key={el.id || `elem_${idx}`} className="p-3 bg-white hover:bg-slate-50/80 text-xs transition-colors">
+                  <div key={`elem-${el.id || 'el'}-${idx}`} className="p-3 bg-white hover:bg-slate-50/80 text-xs transition-colors">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       {/* Left: Element identifiers */}
                       <div className="space-y-1 min-w-0">

@@ -114,6 +114,7 @@ CreditCard: 4532-1182-9920-1829
   }
 
   console.log('\n✅ ALL E2E PRIVACY & SECURITY TESTS PASSED!\n');
+  process.exit(0);
 }
 
 runE2ESecurityTests().catch((err) => {

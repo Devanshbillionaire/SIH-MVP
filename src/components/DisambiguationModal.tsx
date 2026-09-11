@@ -77,7 +77,7 @@ export const DisambiguationModal: React.FC<DisambiguationModalProps> = ({
 
             return (
               <div
-                key={cand.id || idx}
+                key={`candidate-option-${cand.id || 'elem'}-${cand.selector || ''}-${idx}`}
                 id={`candidate-option-${idx}`}
                 onClick={() => {
                   if (!isExecuting) {

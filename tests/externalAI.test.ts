@@ -87,6 +87,7 @@ async function runTests() {
   assert(!serialized.includes('sk-123456789012345678901234567890'), 'No API Key in serialized external data');
 
   console.log('🎉 ALL EXTERNAL AI & SECURITY INVARIANT TESTS PASSED!');
+  process.exit(0);
 }
 
 runTests().catch(err => {

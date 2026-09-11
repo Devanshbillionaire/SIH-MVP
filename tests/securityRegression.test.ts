@@ -79,18 +79,56 @@ async function runSecurityRegressionTests() {
   const publicHttps = validateUrlSafety('https://example.com/checkout');
   assert(publicHttps.valid && publicHttps.normalizedUrl === 'https://example.com/checkout', 'Allows legitimate public HTTPS URL');
 
-  // 1.7 Fixture Exception handling
-  const fixtureDev = validateUrlSafety('http://localhost:3000/fixtures/form.html', {
-    enforceProduction: false,
-    allowLocalFixture: true
-  });
-  assert(fixtureDev.valid, 'Allows local fixture in dev/test environment');
+  // 1.7 Fixture Exception handling & Phase 11.1 Regression Invariants
+  // PASS: http://localhost:3000/fixtures/form.html
+  const fixtureDevDefault = validateUrlSafety('http://localhost:3000/fixtures/form.html');
+  assert(fixtureDevDefault.valid && fixtureDevDefault.normalizedUrl === 'http://localhost:3000/fixtures/form.html', 'Allows http://localhost:3000/fixtures/form.html in dev/test mode');
 
+  // PASS: http://localhost:3000/fixtures/form.html?ambiguous=true
+  const fixtureDevAmbiguous = validateUrlSafety('http://localhost:3000/fixtures/form.html?ambiguous=true');
+  assert(fixtureDevAmbiguous.valid && fixtureDevAmbiguous.normalizedUrl === 'http://localhost:3000/fixtures/form.html?ambiguous=true', 'Allows http://localhost:3000/fixtures/form.html?ambiguous=true in dev/test mode');
+
+  // BLOCK: http://localhost:3000/api/admin
+  const blockLocalAdmin = validateUrlSafety('http://localhost:3000/api/admin');
+  assert(!blockLocalAdmin.valid && blockLocalAdmin.blockedReason === 'INTERNAL_OR_LOCAL_HOSTNAME', 'Blocks http://localhost:3000/api/admin');
+
+  // BLOCK: http://localhost:3000/
+  const blockLocalRoot = validateUrlSafety('http://localhost:3000/');
+  assert(!blockLocalRoot.valid && blockLocalRoot.blockedReason === 'INTERNAL_OR_LOCAL_HOSTNAME', 'Blocks http://localhost:3000/');
+
+  // BLOCK: http://localhost:3000/api/agent/execute
+  const blockLocalExecute = validateUrlSafety('http://localhost:3000/api/agent/execute');
+  assert(!blockLocalExecute.valid && blockLocalExecute.blockedReason === 'INTERNAL_OR_LOCAL_HOSTNAME', 'Blocks http://localhost:3000/api/agent/execute');
+
+  // BLOCK: http://127.0.0.1:3000/api/admin
+  const blockIpAdmin = validateUrlSafety('http://127.0.0.1:3000/api/admin');
+  assert(!blockIpAdmin.valid && blockIpAdmin.blockedReason === 'PRIVATE_IPV4_RANGE', 'Blocks http://127.0.0.1:3000/api/admin');
+
+  // BLOCK: http://127.0.0.1:3000/fixtures/form.html (arbitrary 127.0.0.1 blocked, only exact localhost:3000 origin allowed)
+  const blockIpFixture = validateUrlSafety('http://127.0.0.1:3000/fixtures/form.html');
+  assert(!blockIpFixture.valid && blockIpFixture.blockedReason === 'PRIVATE_IPV4_RANGE', 'Blocks arbitrary 127.0.0.1 fixture URL');
+
+  // BLOCK: http://169.254.169.254/
+  const blockCloudMetadata = validateUrlSafety('http://169.254.169.254/');
+  assert(!blockCloudMetadata.valid && Boolean(blockCloudMetadata.isPrivate), 'Blocks http://169.254.169.254/');
+
+  // BLOCK: http://10.0.0.1/
+  const blockPrivate10 = validateUrlSafety('http://10.0.0.1/');
+  assert(!blockPrivate10.valid && blockPrivate10.blockedReason === 'PRIVATE_IPV4_RANGE', 'Blocks http://10.0.0.1/');
+
+  // BLOCK: http://192.168.1.1/
+  const blockPrivate192 = validateUrlSafety('http://192.168.1.1/');
+  assert(!blockPrivate192.valid && blockPrivate192.blockedReason === 'PRIVATE_IPV4_RANGE', 'Blocks http://192.168.1.1/');
+
+  // BLOCK: file:///etc/passwd
+  const blockFileScheme = validateUrlSafety('file:///etc/passwd');
+  assert(!blockFileScheme.valid && blockFileScheme.blockedReason === 'LOCAL_FILESYSTEM_SCHEME', 'Blocks file:///etc/passwd');
+
+  // Strictly verify production mode does NOT permit localhost fixtures
   const fixtureProd = validateUrlSafety('http://localhost:3000/fixtures/form.html', {
-    enforceProduction: true,
-    allowLocalFixture: false
+    enforceProduction: true
   });
-  assert(!fixtureProd.valid, 'Strictly blocks local fixture in production environment');
+  assert(!fixtureProd.valid && fixtureProd.blockedReason === 'INTERNAL_OR_LOCAL_HOSTNAME', 'Strictly blocks localhost fixture in production environment');
 
   // --------------------------------------------------------------------------
   // SECTION 2: Screenshot Privacy & Fail-Closed Storage Gating
@@ -219,12 +257,22 @@ async function runSecurityRegressionTests() {
   const externalFixtureUrl = new URL('http://malicious-site.com/fixtures/form.html');
   assert(!isAllowedLocalDevFixture(externalFixtureUrl), 'isAllowedLocalDevFixture blocks non-localhost hosts');
 
+  const ipFixtureUrl = new URL('http://127.0.0.1:3000/fixtures/form.html');
+  assert(!isAllowedLocalDevFixture(ipFixtureUrl), 'isAllowedLocalDevFixture blocks 127.0.0.1');
+
+  const wrongPortFixtureUrl = new URL('http://localhost:8080/fixtures/form.html');
+  assert(!isAllowedLocalDevFixture(wrongPortFixtureUrl), 'isAllowedLocalDevFixture blocks non-3000 ports');
+
   const nonFixtureUrl = new URL('http://localhost:3000/admin/secrets');
   assert(!isAllowedLocalDevFixture(nonFixtureUrl), 'isAllowedLocalDevFixture blocks non-fixture endpoints on localhost');
+
+  const prodFixtureUrl = new URL('http://localhost:3000/fixtures/form.html');
+  assert(!isAllowedLocalDevFixture(prodFixtureUrl, { enforceProduction: true }), 'isAllowedLocalDevFixture rejects in production');
 
   console.log('\n======================================================');
   console.log('   🎉 ALL PHASE 9.5 SECURITY REGRESSION TESTS PASSED!');
   console.log('======================================================\n');
+  process.exit(0);
 }
 
 runSecurityRegressionTests().catch((err) => {

@@ -297,8 +297,12 @@ export function App() {
         } : s));
       }
     } catch (err: any) {
-      console.error('Error executing task perception:', err);
-      const errMsg = err.message || 'Webpage perception failed.';
+      const errMsg = err?.message || 'Webpage perception failed.';
+      if (typeof errMsg === 'string' && (errMsg.includes('SSRF Protection') || errMsg.includes('Invalid URL') || errMsg.includes('blocked'))) {
+        console.warn('Task perception validation rejection:', errMsg);
+      } else {
+        console.error('Error executing task perception:', err);
+      }
       setErrorMsg(errMsg);
       setStages([
         { id: 'stage-1', name: 'Opening webpage', description: errMsg, status: 'failed' },
