@@ -19,12 +19,16 @@ interface TaskPlanPanelProps {
   plan: TaskPlan | null;
   intent?: TaskIntent | null;
   hasRun: boolean;
+  onExecutePlan?: () => void;
+  isExecuting?: boolean;
 }
 
 export const TaskPlanPanel: React.FC<TaskPlanPanelProps> = ({
   plan,
   intent,
-  hasRun
+  hasRun,
+  onExecutePlan,
+  isExecuting = false
 }) => {
   if (!hasRun && !plan) {
     return (
@@ -108,6 +112,27 @@ export const TaskPlanPanel: React.FC<TaskPlanPanelProps> = ({
         </div>
         <div className="flex items-center space-x-2">
           {getStatusBadge(activePlan.status)}
+          {onExecutePlan && (
+            <button
+              type="button"
+              id="btn-execute-plan-direct"
+              onClick={onExecutePlan}
+              disabled={isExecuting || activePlan.status === 'NEEDS_CLARIFICATION'}
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-2xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {isExecuting ? (
+                <>
+                  <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Executing Actions...</span>
+                </>
+              ) : (
+                <>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                  <span>Execute Plan ({activePlan.steps.length} actions)</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
 

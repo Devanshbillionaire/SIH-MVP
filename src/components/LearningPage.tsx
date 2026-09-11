@@ -136,7 +136,7 @@ export const LearningPage: React.FC<LearningPageProps> = ({
             <span className="text-xs font-medium text-slate-500">/ {total} Total</span>
           </div>
           <p className="text-xs text-slate-500 mt-2">
-            Offline feature vectors retained for incremental Random Forest retraining.
+            Offline feature vectors retained for incremental Online SGD Logistic Regression retraining.
           </p>
         </div>
 
@@ -221,7 +221,7 @@ export const LearningPage: React.FC<LearningPageProps> = ({
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
             <div className="flex items-center space-x-2">
               <GraduationCap className="w-4 h-4 text-purple-600" />
-              <h3 className="text-sm font-bold text-slate-900">RandomForest Feature Importance</h3>
+              <h3 className="text-sm font-bold text-slate-900">Online SGD Logistic Feature Importance</h3>
             </div>
             <span className="text-xs font-mono text-slate-500">Relative Weights</span>
           </div>

@@ -430,7 +430,7 @@ export class PagePerceptionService {
         {
           id: 'stage-6',
           name: 'ML confidence analysis',
-          description: 'RandomForest confidence scoring ready',
+          description: 'Online SGD Logistic Regression scoring ready',
           status: 'pending' as const
         },
         {
@@ -718,7 +718,7 @@ export class PagePerceptionService {
       {
         id: 'stage-6',
         name: 'ML confidence analysis',
-        description: 'Random Forest model scoring ready',
+        description: 'Online SGD Logistic Regression model scoring ready',
         status: 'pending' as const
       },
       {

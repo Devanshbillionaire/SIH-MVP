@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppSettings } from '../types';
 import { Settings as SettingsIcon, Shield, Cpu, Lock, CheckCircle2, Sliders, Zap } from 'lucide-react';
 
@@ -11,6 +11,25 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   settings,
   onUpdateSettings
 }) => {
+  const [systemStatus, setSystemStatus] = useState<{
+    external_ai_configured?: boolean;
+    external_ai_status?: string;
+    ml_engine?: string;
+  }>({});
+
+  useEffect(() => {
+    fetch('/api/status')
+      .then((res) => res.json())
+      .then((data) => {
+        setSystemStatus({
+          external_ai_configured: data.external_ai_configured,
+          external_ai_status: data.external_ai_status,
+          ml_engine: data.ml_engine
+        });
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <div id="settings-page" className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Header */}
@@ -44,12 +63,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               {
                 id: 'local',
                 label: 'Local Model',
-                desc: 'Strictly on-device Random Forest + Fuzzy Logic without any cloud API requests.'
+                desc: 'Strictly on-device Online SGD Logistic Regression + Fuzzy Logic without any cloud API requests.'
               },
               {
                 id: 'external',
                 label: 'External AI',
-                desc: 'Leverages cloud multimodal LLM for complex form parsing assistance.'
+                desc: 'Leverages Gemini cloud assistant for ambiguous label disambiguation (sanitized, zero-leak).'
               }
             ].map((opt) => {
               const isSelected = settings.ai_provider === opt.id;
@@ -117,7 +136,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             <div>
               <span className="text-sm font-semibold text-slate-800 block">Local On-Device Processing</span>
               <p className="text-xs text-slate-500 mt-0.5">
-                Status of offline DOM tokenization and feature vector computation.
+                Engine: {systemStatus.ml_engine || 'Online SGD Logistic Regression'}
               </p>
             </div>
             <div className="flex items-center space-x-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
@@ -127,8 +146,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           </div>
 
           {/* External AI Usage Policy */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
               External AI Usage Boundary
             </label>
             <select
@@ -140,6 +159,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               <option value="ambiguous_only">Only When Ambiguous (Default / Fallback Only)</option>
               <option value="always">Always Allowed (Full Multimodal Cloud Assistance)</option>
             </select>
+            <div className="flex items-center space-x-2 text-xs text-slate-500 pt-1">
+              <span>External AI Connectivity:</span>
+              <span className={`font-semibold ${systemStatus.external_ai_configured ? 'text-emerald-600' : 'text-slate-600'}`}>
+                {systemStatus.external_ai_status || 'Local Fallback Ready'}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -176,7 +201,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             <div>
               <span className="text-sm font-semibold text-slate-800 block">Continuous Offline Learning</span>
               <p className="text-xs text-slate-500 mt-0.5">
-                Automatically retrains the local Random Forest model after verified form completions.
+                Automatically retrains the local Online SGD Logistic Regression model after verified form completions.
               </p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">

@@ -186,7 +186,7 @@ export class SafeFormExecutionEngine {
       const userValues = { ...(plan.intent?.user_data_separated || {}), ...(options.user_data || {}) };
 
       for (const step of actionSteps) {
-        const fieldName = step.field_name || step.target;
+        const fieldName = step.field_name || step.target_description || (step as any).target || step.target_element?.name || step.target_element?.id || 'field';
 
         // A. Handle SKIP action (explicitly skipped by user prompt)
         if (step.action === 'SKIP' || step.status === 'SKIPPED') {
@@ -246,7 +246,7 @@ export class SafeFormExecutionEngine {
         }
 
         // D. Privacy Gate: Classify and safely retrieve field value
-        const targetValue = this.resolveFieldValue(fieldName, userValues, taskId, step.value);
+        const targetValue = this.resolveFieldValue(fieldName, userValues, taskId, step.value || step.value_to_input);
         const privacyClassification = PrivacyGateway.classifyField(fieldName, targetValue || '');
 
         if (privacyClassification.sensitivity === 'HIGHLY_SENSITIVE' && step.execution === 'STANDARD') {
@@ -969,12 +969,16 @@ export class SafeFormExecutionEngine {
    * Resolve field value safely from provided user data or local vault
    */
   private static resolveFieldValue(
-    fieldName: string,
-    userValues: Record<string, string>,
-    taskId: string,
+    fieldName: string = '',
+    userValues: Record<string, string> = {},
+    taskId: string = '',
     stepValue?: string
   ): string | undefined {
-    const cleanKey = fieldName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (stepValue !== undefined && stepValue !== '') {
+      return stepValue;
+    }
+
+    const cleanKey = String(fieldName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
     // Check Local Secure Store first for protected secrets
     if (cleanKey.includes('pass') || cleanKey.includes('pwd')) {
@@ -988,15 +992,10 @@ export class SafeFormExecutionEngine {
     }
 
     // Check direct match in userValues
-    for (const [k, v] of Object.entries(userValues)) {
+    for (const [k, v] of Object.entries(userValues || {})) {
       if (k.toLowerCase().replace(/[^a-z0-9]/g, '') === cleanKey) {
         return v;
       }
-    }
-
-    // If step itself specified a value (e.g., TaskPlanStep.value)
-    if (stepValue !== undefined && stepValue !== '') {
-      return stepValue;
     }
 
     return undefined;

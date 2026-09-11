@@ -2,13 +2,13 @@
   "modelVersion": "v1.0.0",
   "status": "TRAINED",
   "weights": [
-    5.349728786339168,
-    7.857495666699166,
-    8.045401089259864,
-    -5.689151483738615,
-    1.5792754746782416
+    5.822676804443749,
+    8.546445612818824,
+    8.86239411540579,
+    -6.034560907376797,
+    1.7855164206796534
   ],
-  "bias": -7.386439354682365,
+  "bias": -7.818201134288004,
   "samples": [
     {
       "timestamp": 1788948169633,
@@ -1087,9 +1087,429 @@
       "outcome": "VERIFIED_SUCCESS",
       "candidate_type": "element",
       "action_type": "FILL"
+    },
+    {
+      "task_id": "exec_[PHONE_REDACTED]",
+      "timestamp": 1789087140608,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "exec_[PHONE_REDACTED]",
+      "timestamp": 1789087142114,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "exec_[PHONE_REDACTED]",
+      "timestamp": 1789087146603,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "SELECT"
+    },
+    {
+      "task_id": "exec_[PHONE_REDACTED]",
+      "timestamp": 1789087148111,
+      "x": [
+        0.8,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "CHECK"
+    },
+    {
+      "task_id": "exec_[PHONE_REDACTED]",
+      "timestamp": 1789087150936,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "exec_[PHONE_REDACTED]",
+      "timestamp": 1789087153666,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "e2e_task_[PHONE_REDACTED]",
+      "timestamp": 1789087901462,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "e2e_task_[PHONE_REDACTED]",
+      "timestamp": 1789087901532,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "e2e_task_[PHONE_REDACTED]",
+      "timestamp": 1789087901615,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "e2e_task_[PHONE_REDACTED]",
+      "timestamp": 1789087934228,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "e2e_task_[PHONE_REDACTED]",
+      "timestamp": 1789087934298,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "e2e_task_[PHONE_REDACTED]",
+      "timestamp": 1789087934349,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "exec_[PHONE_REDACTED]",
+      "timestamp": 1789087953512,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "exec_[PHONE_REDACTED]",
+      "timestamp": 1789087955028,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "exec_[PHONE_REDACTED]",
+      "timestamp": 1789087959569,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "SELECT"
+    },
+    {
+      "task_id": "exec_[PHONE_REDACTED]",
+      "timestamp": 1789087961045,
+      "x": [
+        0.8,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "CHECK"
+    },
+    {
+      "task_id": "exec_[PHONE_REDACTED]",
+      "timestamp": 1789087963770,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "exec_[PHONE_REDACTED]",
+      "timestamp": 1789087966571,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "e2e_task_[PHONE_REDACTED]",
+      "timestamp": 1789087974786,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "e2e_task_[PHONE_REDACTED]",
+      "timestamp": 1789087974883,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "e2e_task_[PHONE_REDACTED]",
+      "timestamp": 1789087974981,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "task_[PHONE_REDACTED]_yhzdo",
+      "timestamp": 1789088809601,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "input",
+      "action_type": "TYPE"
+    },
+    {
+      "task_id": "task_[PHONE_REDACTED]",
+      "timestamp": 1789088811048,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "task_[PHONE_REDACTED]",
+      "timestamp": 1789088811138,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "task_[PHONE_REDACTED]",
+      "timestamp": 1789088811218,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "live_verify_1",
+      "timestamp": 1789088853687,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "live_verify_1",
+      "timestamp": 1789088853762,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "live_verify_1",
+      "timestamp": 1789088853853,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
     }
   ],
-  "lastTrained": "2026-09-11T00:29:20.733Z",
+  "lastTrained": "2026-09-11T01:07:33.854Z",
   "validationScore": 1,
   "accuracy": 1
 }

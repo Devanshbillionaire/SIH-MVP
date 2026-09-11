@@ -39,6 +39,29 @@ export async function createAgentPlan(payload: {
   return await res.json();
 }
 
+export async function executeAgentPlan(payload: {
+  url: string;
+  plan?: any;
+  task_plan?: any;
+  user_data?: any;
+  information?: string;
+  task?: string;
+  task_id?: string;
+  confirmed_high_risk?: boolean;
+  user_selected_candidates?: Record<string, string>;
+}): Promise<{ success: boolean; plan: any; result: any; execution_result: any }> {
+  const res = await fetch(`${API_BASE}/agent/execute`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || err.message || 'Execution failed');
+  }
+  return await res.json();
+}
+
 export async function getLearningStats(): Promise<LearningStats> {
   try {
     const res = await fetch(`${API_BASE}/learning-stats`);
@@ -66,7 +89,7 @@ export async function executeAgentTask(params: ExecuteAgentTaskParams): Promise<
       url: params.url,
       information: params.information,
       task: params.task || params.information,
-      execute: true
+      execute: false
     })
   });
 

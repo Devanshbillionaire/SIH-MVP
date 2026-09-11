@@ -11,6 +11,7 @@ import { fuzzyDecisionEngine, FuzzyEvaluationResult } from './server/fuzzyEngine
 import { getMLMetadata, mlInstance } from './server/mlPredictor';
 import { IntentParser } from './server/intentParser';
 import { SafeFormExecutionEngine } from './server/safeExecutor';
+import { ExternalAIService } from './server/externalAI';
 import { TaskExecutionResult } from './src/types';
 
 const PORT = 3000;
@@ -32,47 +33,22 @@ async function startServer() {
   // 1. Health & Status
   app.get('/api/status', (req, res) => {
     const mlMeta = getMLMetadata();
+    const externalAiConfigured = ExternalAIService.isConfigured();
     res.json({
       status: 'ready',
       agent: 'PrivaSight',
       browser_engine: 'DOM-Visual Perception Engine',
-      fuzzy_engine: 'Scikit-Fuzzy Logic System',
-      ml_engine: 'RandomForest Classifier',
+      fuzzy_engine: 'Triangular & Trapezoidal Fuzzy Decision Engine',
+      ml_engine: 'Online SGD Logistic Regression',
       ml_status: mlMeta.status,
       model_version: mlMeta.model_version,
+      external_ai_status: externalAiConfigured ? 'Configured' : 'Unconfigured (Local Fallback Active)',
+      external_ai_configured: externalAiConfigured,
       privacy_filter: 'Active'
     });
   });
 
-  // 2. Demo Sites Catalog
-  app.get('/api/demo-sites', (req, res) => {
-    res.json({
-      demo_sites: [
-        {
-          id: 'search',
-          name: 'Course Finder Website',
-          description: 'Demonstrates fuzzy search input matching, course card filtering, and result link selection.'
-        },
-        {
-          id: 'form',
-          name: 'Participant Registration Form',
-          description: 'Demonstrates field label matching, privacy-aware sanitization, and form submission verification.'
-        },
-        {
-          id: 'ecommerce',
-          name: 'Gadget E-Commerce Store',
-          description: 'Demonstrates product catalog search, "Add to Cart" / "Put in Bag" alternative action matching.'
-        },
-        {
-          id: 'booking',
-          name: 'Flight Booking Portal',
-          description: 'Demonstrates multi-input origin/destination matching and flight ticket reservation workflows.'
-        }
-      ]
-    });
-  });
-
-  // 3. Learning Metrics
+  // 2. Learning Metrics
   app.get('/api/learning-stats', (req, res) => {
     try {
       const stats = interactionStore.getStats();
@@ -259,9 +235,15 @@ async function startServer() {
         });
       }
 
+      const resolvedUserData = typeof rawInfo === 'object' && rawInfo
+        ? rawInfo
+        : (typeof rawInfo === 'string' && rawInfo.trim().length > 0
+            ? agentPlanner.extractFieldsFromInformation(rawInfo)
+            : undefined);
+
       const executionResult = await SafeFormExecutionEngine.executePlan(rawUrl, plan, {
         task_id: taskId,
-        user_data: typeof rawInfo === 'object' && rawInfo ? rawInfo : undefined,
+        user_data: resolvedUserData,
         confirmed_high_risk: confirmedHighRisk,
         user_selected_candidates: userSelectedCandidates
       });
@@ -454,7 +436,7 @@ async function startServer() {
         stage6.status = 'completed';
         stage6.description = mlMeta.status === 'COLD_START'
           ? `ML in COLD_START (${mlMeta.training_samples}/${mlMeta.min_samples_for_trained} verified samples). Using deterministic baseline.`
-          : `RandomForest evaluated candidate probabilities (Score: ${Math.round((primaryFuzzy.ml_confidence || 0.85) * 100)}%).`;
+          : `Online SGD Logistic Regression evaluated candidate probabilities (Score: ${Math.round((primaryFuzzy.ml_confidence || 0.85) * 100)}%).`;
       }
 
       const stage7 = stages.find(s => s.id === 'stage-7');

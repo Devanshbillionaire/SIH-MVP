@@ -159,7 +159,7 @@ export const TaskInput: React.FC<TaskInputProps> = ({
             ) : (
               <>
                 <Play className="w-4 h-4 fill-current" />
-                <span>Analyze & Plan Task</span>
+                <span>START TASK</span>
               </>
             )}
           </button>

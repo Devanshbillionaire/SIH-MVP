@@ -26,12 +26,14 @@ import {
   AppSettings,
   DisambiguationCandidate,
   TaskPlan,
-  TaskIntent
+  TaskIntent,
+  TaskExecutionResult
 } from './types';
 
 import {
   getLearningStats,
   executeAgentTask,
+  executeAgentPlan,
   resetLearning,
   resetML,
   submitLearningFeedback,
@@ -44,8 +46,8 @@ const DEFAULT_STAGES: TaskExecutionStage[] = [
   { id: 'stage-3', name: 'Analyzing DOM and screenshot', description: 'Computing layout bounds and visual hierarchy', status: 'pending' },
   { id: 'stage-4', name: 'Detecting form fields', description: 'Identifying interactive inputs, selects, and textareas', status: 'pending' },
   { id: 'stage-5', name: 'Privacy filtering', description: 'Scanning local inputs for sensitive PII and confidential tokens', status: 'pending' },
-  { id: 'stage-6', name: 'ML confidence analysis', description: 'Predicting element relevance with Random Forest model', status: 'pending' },
-  { id: 'stage-7', name: 'Fuzzy ambiguity resolution', description: 'Resolving candidate conflict with Scikit-fuzzy engine', status: 'pending' },
+  { id: 'stage-6', name: 'ML confidence analysis', description: 'Predicting element relevance with Online SGD Logistic Regression model', status: 'pending' },
+  { id: 'stage-7', name: 'Fuzzy ambiguity resolution', description: 'Resolving candidate conflict with Mamdani fuzzy inference engine', status: 'pending' },
   { id: 'stage-8', name: 'Intelligent field mapping', description: 'Associating provided information keys with detected DOM fields', status: 'pending' },
   { id: 'stage-9', name: 'Filling form', description: 'Simulating sequential human keystrokes on target fields', status: 'pending' },
   { id: 'stage-10', name: 'Verification', description: 'Verifying DOM post-fill state and receipt assertions', status: 'pending' },
@@ -55,10 +57,10 @@ const DEFAULT_STAGES: TaskExecutionStage[] = [
 export function App() {
   const [activeTab, setActiveTab] = useState<NavigationTab>('task');
 
-  // Task Input State
-  const [url, setUrl] = useState<string>('https://httpbin.org/forms/post');
-  const [task, setTask] = useState<string>('Fill my name, email and phone number and leave the password field for me.');
-  const [userData, setUserData] = useState<string>('Name = Devansh Kumar\nEmail = devansh@example.com\nPhone = +1-555-0199');
+  // Task Input State (Clean initial state without preloaded dummy data)
+  const [url, setUrl] = useState<string>('');
+  const [task, setTask] = useState<string>('');
+  const [userData, setUserData] = useState<string>('');
   const [information, setInformation] = useState<string>('');
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [hasRun, setHasRun] = useState<boolean>(false);
@@ -67,6 +69,8 @@ export function App() {
   // Phase 6 Task Plan & Intent State
   const [taskPlan, setTaskPlan] = useState<TaskPlan | null>(null);
   const [taskIntent, setTaskIntent] = useState<TaskIntent | null>(null);
+  const [executionResult, setExecutionResult] = useState<TaskExecutionResult | null>(null);
+  const [isExecutingPlan, setIsExecutingPlan] = useState<boolean>(false);
 
   // Execution Results State
   const [stages, setStages] = useState<TaskExecutionStage[]>(DEFAULT_STAGES);
@@ -218,6 +222,67 @@ export function App() {
       };
 
       setActivities((prev) => [newActivity, ...prev]);
+
+      const hasAmbiguity = response.field_mappings?.some((m: any) => m.decision === 'ASK_USER') || response.fuzzy_decision?.decision === 'ASK_USER';
+
+      // CHAIN EXECUTION: If plan is READY and not blocked by ambiguous candidate choices, execute directly
+      if (response.task_plan?.status === 'READY' && !hasAmbiguity) {
+        setStages((prev) => prev.map(s => s.id === 'stage-9' ? { ...s, status: 'active' as const, description: 'Executing form actions in browser...' } : s));
+
+        try {
+          const execRes = await executeAgentPlan({
+            url: targetUrl,
+            plan: response.task_plan,
+            user_data: combinedInfo,
+            task_id: response.task_id || `task_${Date.now()}`
+          });
+
+          const execResult = execRes.result || execRes.execution_result;
+          if (execResult) {
+            setExecutionResult(execResult);
+            if (execResult.verification) {
+              setVerification(execResult.verification);
+            }
+
+            setStages((prev) => prev.map(s => {
+              if (s.id === 'stage-9') {
+                return {
+                  ...s,
+                  status: execResult.status === 'SUCCESS' ? 'completed' as const : (execResult.status === 'PARTIAL_SUCCESS' ? 'warning' as const : 'failed' as const),
+                  description: `Executed ${execResult.completed_actions}/${execResult.total_actions} actions safely.`
+                };
+              }
+              if (s.id === 'stage-10') {
+                return {
+                  ...s,
+                  status: execResult.status === 'SUCCESS' ? 'completed' as const : 'warning' as const,
+                  description: execResult.summary || 'DOM verification complete'
+                };
+              }
+              if (s.id === 'stage-11') {
+                return {
+                  ...s,
+                  status: 'completed' as const,
+                  description: 'Interaction outcome verified and logged locally.'
+                };
+              }
+              return s;
+            }));
+
+            // Refresh learning stats
+            getLearningStats().then(setLearningStats).catch(() => {});
+          }
+        } catch (execError: any) {
+          console.error('Direct execution error:', execError);
+          setStages((prev) => prev.map(s => s.id === 'stage-9' ? { ...s, status: 'warning' as const, description: execError?.message || 'Execution error' } : s));
+        }
+      } else if (hasAmbiguity) {
+        setStages((prev) => prev.map(s => s.id === 'stage-9' ? {
+          ...s,
+          status: 'warning' as const,
+          description: 'Awaiting user candidate selection for ambiguous fields.'
+        } : s));
+      }
     } catch (err: any) {
       console.error('Error executing task perception:', err);
       const errMsg = err.message || 'Webpage perception failed.';
@@ -237,6 +302,77 @@ export function App() {
       ]);
     } finally {
       setIsRunning(false);
+    }
+  };
+
+  const handleExecuteConfirmedPlan = async () => {
+    if (!taskPlan || isExecutingPlan) return;
+    const targetUrl = url.trim() || perception?.url || '';
+    if (!targetUrl) return;
+
+    setIsExecutingPlan(true);
+    setStages((prev) => prev.map(s => s.id === 'stage-9' ? { ...s, status: 'active' as const, description: 'Executing form actions in browser...' } : s));
+
+    try {
+      const selectedCandidatesMap: Record<string, string> = {};
+      fieldMappings.forEach(m => {
+        if (m.selected_candidate_id) {
+          selectedCandidatesMap[m.user_field] = m.selected_candidate_id;
+        }
+      });
+
+      const combinedInfo = userData.trim()
+        ? `${task.trim()}\n\nUser Data:\n${userData.trim()}`
+        : (task.trim() || information.trim());
+
+      const execRes = await executeAgentPlan({
+        url: targetUrl,
+        plan: taskPlan,
+        user_data: combinedInfo,
+        task_id: `task_${Date.now()}`,
+        user_selected_candidates: selectedCandidatesMap
+      });
+
+      const execResult = execRes.result || execRes.execution_result;
+      if (execResult) {
+        setExecutionResult(execResult);
+        if (execResult.verification) {
+          setVerification(execResult.verification);
+        }
+
+        setStages((prev) => prev.map(s => {
+          if (s.id === 'stage-9') {
+            return {
+              ...s,
+              status: execResult.status === 'SUCCESS' ? 'completed' as const : (execResult.status === 'PARTIAL_SUCCESS' ? 'warning' as const : 'failed' as const),
+              description: `Executed ${execResult.completed_actions}/${execResult.total_actions} actions safely.`
+            };
+          }
+          if (s.id === 'stage-10') {
+            return {
+              ...s,
+              status: execResult.status === 'SUCCESS' ? 'completed' as const : 'warning' as const,
+              description: execResult.summary || 'DOM verification complete'
+            };
+          }
+          if (s.id === 'stage-11') {
+            return {
+              ...s,
+              status: 'completed' as const,
+              description: 'Interaction outcome verified and logged locally.'
+            };
+          }
+          return s;
+        }));
+
+        const refreshedStats = await getLearningStats();
+        setLearningStats(refreshedStats);
+      }
+    } catch (err: any) {
+      console.error('Execution error:', err);
+      setStages((prev) => prev.map(s => s.id === 'stage-9' ? { ...s, status: 'warning' as const, description: err?.message || 'Execution failed' } : s));
+    } finally {
+      setIsExecutingPlan(false);
     }
   };
 
@@ -342,6 +478,8 @@ export function App() {
               plan={taskPlan}
               intent={taskIntent}
               hasRun={hasRun}
+              onExecutePlan={handleExecuteConfirmedPlan}
+              isExecuting={isExecutingPlan}
             />
 
             {/* Two-Column Structured Panels Grid */}

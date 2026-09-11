@@ -22,7 +22,7 @@ export const MLPanel: React.FC<MLPanelProps> = ({
           </div>
           <div>
             <h3 className="text-base font-semibold text-slate-900 tracking-tight">Machine Learning Model</h3>
-            <p className="text-xs text-slate-500">Scikit-learn RandomForest predicting candidate probability from privacy-safe feature vectors</p>
+            <p className="text-xs text-slate-500">Online SGD Logistic Regression predicting candidate probability from privacy-safe feature vectors</p>
           </div>
         </div>
 
@@ -35,7 +35,7 @@ export const MLPanel: React.FC<MLPanelProps> = ({
                   : 'text-amber-700 bg-amber-50 border-amber-200'
               }`}
             >
-              {stats.model_metadata?.status === 'TRAINED' ? 'Model: Trained RF' : 'Mode: Cold-Start'}
+              {stats.model_metadata?.status === 'TRAINED' ? 'Model: Trained SGD' : 'Mode: Cold-Start'}
             </span>
             <span className="hidden sm:inline-block text-xs font-mono text-slate-400">
               {stats.model_metadata?.model_version || 'v1.0'}
@@ -67,7 +67,7 @@ export const MLPanel: React.FC<MLPanelProps> = ({
                 <span className="font-semibold">Cold Start Baseline Active: </span>
                 <span>
                   Using deterministic heuristic fallback ({stats.model_metadata.training_samples} of{' '}
-                  {stats.model_metadata.min_samples_for_trained} verified samples required for active RandomForest weights).
+                  {stats.model_metadata.min_samples_for_trained} verified samples required for active SGD classifier weights).
                 </span>
               </div>
             </div>
