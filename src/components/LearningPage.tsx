@@ -89,20 +89,24 @@ export const LearningPage: React.FC<LearningPageProps> = ({
 
       {/* Primary KPI Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Model Accuracy */}
+        {/* Training Accuracy */}
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between text-slate-500">
-            <span className="text-xs font-semibold uppercase tracking-wider">Model Accuracy</span>
+            <span className="text-xs font-semibold uppercase tracking-wider">Training Accuracy</span>
             <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3 flex items-baseline space-x-2">
-            <span className="text-3xl font-extrabold text-slate-900 font-mono">{accuracy}%</span>
-            <span className="text-xs font-medium text-emerald-600">Verified</span>
+            <span className="text-3xl font-extrabold text-slate-900 font-mono">
+              {modelMeta?.training_accuracy != null
+                ? `${Math.round(modelMeta.training_accuracy * 100)}%`
+                : `${accuracy}%`}
+            </span>
+            <span className="text-xs font-medium text-emerald-600">Sample Set</span>
           </div>
           <p className="text-xs text-slate-500 mt-2">
-            Proportion of candidate elements accurately mapped without failure.
+            Classification accuracy evaluated directly on accumulated verified training samples.
           </p>
         </div>
 
@@ -199,13 +203,23 @@ export const LearningPage: React.FC<LearningPageProps> = ({
 
             <div>
               <div className="flex justify-between text-xs font-medium text-slate-700 mb-1">
-                <span>Verification Accuracy Bound</span>
-                <span className="font-mono text-emerald-600">{accuracy}%</span>
+                <span>Training Accuracy Level</span>
+                <span className="font-mono text-emerald-600">
+                  {modelMeta?.training_accuracy != null
+                    ? `${Math.round(modelMeta.training_accuracy * 100)}%`
+                    : `${accuracy}%`}
+                </span>
               </div>
               <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
                 <div
                   className="bg-emerald-500 h-full rounded-full transition-all duration-700"
-                  style={{ width: `${accuracy}%` }}
+                  style={{
+                    width: `${
+                      modelMeta?.training_accuracy != null
+                        ? Math.round(modelMeta.training_accuracy * 100)
+                        : accuracy
+                    }%`
+                  }}
                 />
               </div>
             </div>

@@ -75,7 +75,13 @@ export interface MLModelMetadata {
   model_version: string;
   training_samples: number;
   last_trained: string | null;
-  validation_score: number | null;
+  /**
+   * Accuracy evaluated directly on training samples.
+   * Named accurately to avoid false validation claims.
+   */
+  training_accuracy: number | null;
+  /** Legacy alias for training_accuracy */
+  validation_score?: number | null;
   accuracy: number | null;
   min_samples_for_trained: number;
   features_used: string[];

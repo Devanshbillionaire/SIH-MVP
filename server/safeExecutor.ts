@@ -7,6 +7,7 @@ import { PrivacyGateway, LocalSecureStore } from './privacyGateway';
 import { interactionStore } from './interactionStore';
 import { ScreenshotPrivacyManager } from './privacyFilter';
 import { validateUrl } from './perception';
+import { getBrowserSecurityLaunchArgs, getBrowserContextSecurityOptions } from './browserSecurity';
 import {
   TaskPlan,
   TaskPlanStep,
@@ -80,18 +81,14 @@ export class SafeFormExecutionEngine {
     let page: Page | null = null;
 
     try {
-      // 2. Playwright Browser Launch (Sensible timeouts, resource hygiene)
+      // 2. Playwright Browser Launch (Configurable security arguments & context)
+      const browserLaunchArgs = getBrowserSecurityLaunchArgs();
+      const browserContextOpts = getBrowserContextSecurityOptions();
+
       try {
         browser = await chromium.launch({
           headless: true,
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--disable-gpu'
-          ]
+          args: browserLaunchArgs
         });
       } catch (launchErr: any) {
         console.warn(
@@ -105,7 +102,7 @@ export class SafeFormExecutionEngine {
         viewport: { width: 1440, height: 900 },
         userAgent:
           'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 PrivaSight/2.0 SafeExecutor',
-        ignoreHTTPSErrors: true
+        ...browserContextOpts
       });
 
       page = await context.newPage();
@@ -319,24 +316,44 @@ export class SafeFormExecutionEngine {
         }
       }
 
-      // 8. Capture Post-Execution Local Screenshot
-      const screenshotFilename = `verification_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.png`;
-      const screenshotDir = path.join(process.cwd(), 'static', 'screenshots');
-      if (!fs.existsSync(screenshotDir)) {
-        fs.mkdirSync(screenshotDir, { recursive: true });
+      // 8. Capture Post-Execution Local Screenshot (In-Memory Buffer First)
+      let savedScreenshotUrl: string | undefined = undefined;
+      try {
+        const screenshotBuffer = await page.screenshot({ fullPage: false }).catch(() => null);
+
+        // Evaluate screenshot safety BEFORE writing to static/public disk storage
+        const hasSensitiveFields =
+          plan.steps.some((s) => s.sensitivity === 'HIGHLY_SENSITIVE') ||
+          (plan.intent?.fields && plan.intent.fields.some((f) => f.sensitivity === 'HIGHLY_SENSITIVE')) ||
+          executedActions.some((a) => {
+            const field = String(a.field_name || a.target || '').toLowerCase();
+            return /\b(password|passwd|pin|otp|token|secret|ssn|credit[_-]?card|cvv|cvc)\b/i.test(field);
+          });
+
+        const safetyAssessment = ScreenshotPrivacyManager.evaluateScreenshotSafety(
+          screenshotBuffer,
+          Boolean(hasSensitiveFields),
+          { hasSensitiveFields: Boolean(hasSensitiveFields) }
+        );
+
+        // SAFE? YES -> store if required. NO -> DO NOT store to disk/public storage.
+        if (safetyAssessment.allowed_to_persist && screenshotBuffer) {
+          const screenshotFilename = `verification_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.png`;
+          const screenshotDir = path.join(process.cwd(), 'static', 'screenshots');
+          if (!fs.existsSync(screenshotDir)) {
+            fs.mkdirSync(screenshotDir, { recursive: true });
+          }
+          const screenshotPath = path.join(screenshotDir, screenshotFilename);
+          fs.writeFileSync(screenshotPath, screenshotBuffer);
+          savedScreenshotUrl = `/static/screenshots/${screenshotFilename}`;
+        } else {
+          // Sensitive or uncertain screenshot: NEVER written to public/static storage
+          savedScreenshotUrl = undefined;
+        }
+      } catch (screenshotErr) {
+        console.warn('[SafeExecutor] Screenshot capture notice:', screenshotErr);
+        savedScreenshotUrl = undefined;
       }
-      const screenshotPath = path.join(screenshotDir, screenshotFilename);
-      await page.screenshot({ path: screenshotPath, fullPage: false }).catch(() => {});
-
-      // Evaluate screenshot safety
-      const hasSensitiveFields =
-        plan.steps.some((s) => s.sensitivity === 'HIGHLY_SENSITIVE') ||
-        (plan.intent?.fields && plan.intent.fields.some((f) => f.sensitivity === 'HIGHLY_SENSITIVE'));
-
-      ScreenshotPrivacyManager.evaluateScreenshotSafety(
-        `/static/screenshots/${screenshotFilename}`,
-        Boolean(hasSensitiveFields)
-      );
 
       // 9. Synthesize Overall Execution Status
       const totalActions = executedActions.length;
@@ -371,7 +388,7 @@ export class SafeFormExecutionEngine {
         completed_actions: completedActions,
         verified_count: verifiedCount,
         actions: executedActions,
-        screenshot_after: `/static/screenshots/${screenshotFilename}`,
+        screenshot_after: savedScreenshotUrl,
         error_category: errorCategoryResult,
         user_prompt: userPromptResult,
         duration_ms: Date.now() - startTime

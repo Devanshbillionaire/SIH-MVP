@@ -108,23 +108,72 @@ export class LocalSecureStore {
   }
 }
 
+export interface ScreenshotSafetyAssessment {
+  allowed_for_external_ai: boolean;
+  allowed_to_persist: boolean;
+  is_sensitive: boolean;
+  reason: string;
+}
+
 /**
  * Privacy-aware screenshot handling abstraction.
- * Enforces local redaction policies before any eventual external transmission.
+ * Enforces local storage gating and external AI transmission boundaries.
+ * Invariant: If screenshot safety is uncertain or contains sensitive data,
+ * it must NOT be written to persistent/public storage.
  */
 export class ScreenshotPrivacyManager {
   public static evaluateScreenshotSafety(
-    screenshotPath: string,
-    hasSensitiveData: boolean
-  ): { allowed_for_external_ai: boolean; reason: string } {
-    if (hasSensitiveData) {
+    screenshotPathOrBuffer: string | Buffer | null,
+    hasSensitiveData: boolean,
+    context?: {
+      elements?: any[];
+      hasSensitiveFields?: boolean;
+      userProvidedSensitiveData?: boolean;
+    }
+  ): ScreenshotSafetyAssessment {
+    // 1. If explicitly flagged as sensitive
+    if (hasSensitiveData || context?.hasSensitiveFields || context?.userProvidedSensitiveData) {
       return {
         allowed_for_external_ai: false,
-        reason: 'Screenshot is associated with sensitive/confidential form fields; external AI transmission blocked.'
+        allowed_to_persist: false,
+        is_sensitive: true,
+        reason: 'Screenshot contains or is associated with sensitive/confidential form fields; external AI transmission and disk persistence strictly blocked.'
       };
     }
+
+    // 2. Fail-closed: If payload is missing or empty, safety is uncertain -> do not persist
+    if (!screenshotPathOrBuffer || (Buffer.isBuffer(screenshotPathOrBuffer) && screenshotPathOrBuffer.length === 0)) {
+      return {
+        allowed_for_external_ai: false,
+        allowed_to_persist: false,
+        is_sensitive: true,
+        reason: 'Screenshot payload uncertain or empty; fail-closed policy forbids persistence.'
+      };
+    }
+
+    // 3. Inspect candidate elements if provided
+    if (context?.elements && Array.isArray(context.elements)) {
+      const containsSensitive = context.elements.some((el: any) => {
+        const type = String(el.type || '').toLowerCase();
+        if (type === 'password') return true;
+        const textToScan = `${el.name || ''} ${el.id || ''} ${el.label || ''} ${el.placeholder || ''} ${el.text || ''}`.toLowerCase();
+        return /\b(password|passwd|pin|otp|secret|token|ssn|credit[_-]?card|cvv|cvc)\b/i.test(textToScan);
+      });
+
+      if (containsSensitive) {
+        return {
+          allowed_for_external_ai: false,
+          allowed_to_persist: false,
+          is_sensitive: true,
+          reason: 'Screenshot scope contains detected sensitive input controls; storage and transmission blocked under fail-safe privacy policy.'
+        };
+      }
+    }
+
     return {
       allowed_for_external_ai: true,
+      allowed_to_persist: true,
+      is_sensitive: false,
       reason: 'No sensitive credentials or protected values detected in screenshot scope.'
     };
   }

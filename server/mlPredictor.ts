@@ -6,7 +6,8 @@ export interface MLModelMetadata {
   model_version: string;
   training_samples: number;
   last_trained: string | null;
-  validation_score: number | null;
+  training_accuracy: number | null;
+  validation_score?: number | null;
   accuracy: number | null;
   min_samples_for_trained: number;
   features_used: string[];
@@ -33,7 +34,8 @@ export class AgentMLModel {
   private bias: number = -0.15;
   private samples: TrainingSample[] = [];
   private lastTrained: string | null = null;
-  private validationScore: number | null = null;
+  /** Training accuracy computed against accumulated training samples (not an independent holdout set) */
+  private trainingAccuracy: number | null = null;
   private accuracy: number | null = null;
 
   constructor() {
@@ -67,7 +69,7 @@ export class AgentMLModel {
         }
         this.modelVersion = data.modelVersion || 'v1.0.0';
         this.lastTrained = data.lastTrained || null;
-        this.validationScore = data.validationScore ?? null;
+        this.trainingAccuracy = data.trainingAccuracy ?? data.validationScore ?? null;
         this.accuracy = data.accuracy ?? null;
 
         if (this.samples.length >= MIN_SAMPLES_FOR_TRAINED) {
@@ -85,7 +87,7 @@ export class AgentMLModel {
     this.status = 'COLD_START';
     this.samples = [];
     this.lastTrained = null;
-    this.validationScore = null;
+    this.trainingAccuracy = null;
     this.accuracy = null;
   }
 
@@ -99,7 +101,7 @@ export class AgentMLModel {
         bias: this.bias,
         samples: this.samples,
         lastTrained: this.lastTrained,
-        validationScore: this.validationScore,
+        trainingAccuracy: this.trainingAccuracy,
         accuracy: this.accuracy
       };
       fs.writeFileSync(MODEL_FILE, JSON.stringify(payload, null, 2), 'utf-8');
@@ -218,7 +220,7 @@ export class AgentMLModel {
         }
       }
 
-      // Model Validation: evaluate prediction on sample set
+      // Training Accuracy Evaluation: evaluate prediction accuracy on accumulated training samples
       let correct = 0;
       for (const sample of this.samples) {
         let z = newBias;
@@ -232,23 +234,23 @@ export class AgentMLModel {
         }
       }
 
-      const valScore = Math.round((correct / this.samples.length) * 1000) / 1000;
+      const trainAccuracy = Math.round((correct / this.samples.length) * 1000) / 1000;
 
-      // Validation safeguard: threshold check
-      if (valScore < 0.50 && this.samples.length > 8) {
-        console.warn(`[MLModel] Retrained model failed validation (${valScore}). Preserving existing model.`);
+      // Quality safeguard: threshold check on training samples
+      if (trainAccuracy < 0.50 && this.samples.length > 8) {
+        console.warn(`[MLModel] Retrained model failed safeguard threshold (${trainAccuracy}). Preserving existing model.`);
         this.weights = backupWeights;
         this.bias = backupBias;
         return false;
       }
 
-      // Successfully validated
+      // Successfully updated weights
       this.weights = newWeights;
       this.bias = newBias;
       this.status = 'TRAINED';
       this.lastTrained = new Date().toISOString();
-      this.validationScore = valScore;
-      this.accuracy = valScore;
+      this.trainingAccuracy = trainAccuracy;
+      this.accuracy = trainAccuracy;
       this.saveState();
       return true;
     } catch (err) {
@@ -295,7 +297,7 @@ export class AgentMLModel {
     this.bias = -0.15;
     this.samples = [];
     this.lastTrained = null;
-    this.validationScore = null;
+    this.trainingAccuracy = null;
     this.accuracy = null;
     this.saveState();
     return this.getMetadata();
@@ -307,7 +309,8 @@ export class AgentMLModel {
       model_version: this.modelVersion,
       training_samples: this.samples.length,
       last_trained: this.lastTrained,
-      validation_score: this.validationScore,
+      training_accuracy: this.trainingAccuracy,
+      validation_score: this.trainingAccuracy, // legacy alias
       accuracy: this.accuracy,
       min_samples_for_trained: MIN_SAMPLES_FOR_TRAINED,
       features_used: [

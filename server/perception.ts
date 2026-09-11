@@ -2,81 +2,14 @@ import { chromium, Browser, BrowserContext, Page } from 'playwright';
 import fs from 'fs';
 import path from 'path';
 import { ElementDetector, DOMElementData } from './elementDetector';
+import { validateUrlSafety, UrlValidationOptions, UrlValidationResult } from './urlValidator';
+import { getBrowserSecurityLaunchArgs, getBrowserContextSecurityOptions } from './browserSecurity';
+import { ScreenshotPrivacyManager } from './privacyGateway';
 
-export interface ValidatedUrlResult {
-  valid: boolean;
-  normalizedUrl?: string;
-  error?: string;
-}
+export type ValidatedUrlResult = UrlValidationResult;
 
-export function validateUrl(rawUrl: string): ValidatedUrlResult {
-  if (!rawUrl || typeof rawUrl !== 'string') {
-    return { valid: false, error: 'Invalid URL: Please provide a webpage URL.' };
-  }
-
-  const trimmed = rawUrl.trim();
-  if (!trimmed) {
-    return { valid: false, error: 'Invalid URL: Webpage URL cannot be empty.' };
-  }
-
-  // Security guard: Reject local file schemes or arbitrary filesystem paths
-  if (
-    trimmed.startsWith('/') ||
-    trimmed.startsWith('\\') ||
-    trimmed.startsWith('file:') ||
-    trimmed.startsWith('file://')
-  ) {
-    return {
-      valid: false,
-      error: 'Unsupported URL protocol: Local filesystem paths (file://) are strictly rejected for security.'
-    };
-  }
-
-  // Security guard: Reject non-http protocols
-  if (
-    trimmed.startsWith('javascript:') ||
-    trimmed.startsWith('data:') ||
-    trimmed.startsWith('blob:') ||
-    trimmed.startsWith('ftp:') ||
-    trimmed.startsWith('ws:') ||
-    trimmed.startsWith('wss:')
-  ) {
-    return {
-      valid: false,
-      error: 'Unsupported URL protocol: Only http:// and https:// web addresses are supported.'
-    };
-  }
-
-  let parsed: URL;
-  try {
-    parsed = new URL(trimmed);
-  } catch {
-    // If user provided "example.com" or "example.com/form", try prepending https://
-    try {
-      parsed = new URL(`https://${trimmed}`);
-    } catch {
-      return {
-        valid: false,
-        error: 'Invalid URL: Malformed web address. Please provide a valid URL like https://example.com/form'
-      };
-    }
-  }
-
-  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-    return {
-      valid: false,
-      error: `Unsupported URL protocol (${parsed.protocol}): Only http:// and https:// are supported.`
-    };
-  }
-
-  if (!parsed.hostname || (!parsed.hostname.includes('.') && parsed.hostname !== 'localhost')) {
-    return {
-      valid: false,
-      error: 'Invalid URL: Destination host must contain a valid domain (e.g. example.com).'
-    };
-  }
-
-  return { valid: true, normalizedUrl: parsed.toString() };
+export function validateUrl(rawUrl: string, options?: UrlValidationOptions): ValidatedUrlResult {
+  return validateUrlSafety(rawUrl, options);
 }
 
 export interface PerceptionElement extends DOMElementData {
@@ -128,18 +61,14 @@ export class PagePerceptionService {
     let page: Page | null = null;
 
     try {
-      // 1. Launch Playwright headless chromium (with fallback if binary is unavailable)
+      // 1. Launch Playwright headless chromium (with configurable security arguments)
+      const browserLaunchArgs = getBrowserSecurityLaunchArgs();
+      const browserContextOpts = getBrowserContextSecurityOptions();
+
       try {
         browser = await chromium.launch({
           headless: true,
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--disable-gpu'
-          ]
+          args: browserLaunchArgs
         });
       } catch (launchErr: any) {
         console.warn(
@@ -153,7 +82,7 @@ export class PagePerceptionService {
         viewport: { width: 1440, height: 900 },
         userAgent:
           'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 PrivaSight/2.0',
-        ignoreHTTPSErrors: true
+        ...browserContextOpts
       });
 
       page = await context.newPage();
@@ -182,7 +111,7 @@ export class PagePerceptionService {
       await page.waitForLoadState('networkidle', { timeout: 3500 }).catch(() => {});
       await page.waitForTimeout(300);
 
-      // 3. Real Screenshot Generation
+      // 3. Screenshot Capture (In-Memory Buffer First)
       const screenshotsDir = path.join(process.cwd(), 'static', 'screenshots');
       if (!fs.existsSync(screenshotsDir)) {
         fs.mkdirSync(screenshotsDir, { recursive: true });
@@ -206,15 +135,13 @@ export class PagePerceptionService {
         console.warn('Screenshot retention check notice:', cleanupErr);
       }
 
-      const screenshotFilename = `perception_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.png`;
-      const screenshotFullPath = path.join(screenshotsDir, screenshotFilename);
-
-      await page.screenshot({
-        path: screenshotFullPath,
-        fullPage: false
-      });
-
-      const screenshotUrl = `/static/screenshots/${screenshotFilename}`;
+      let screenshotBuffer: Buffer | null = null;
+      try {
+        screenshotBuffer = await page.screenshot({ fullPage: false });
+      } catch (screenshotCaptureErr) {
+        console.warn('Screenshot capture notice:', screenshotCaptureErr);
+        screenshotBuffer = null;
+      }
 
       // 4. In-browser DOM extraction
       const extracted = await page.evaluate(() => {
@@ -391,6 +318,30 @@ export class PagePerceptionService {
 
       const totalDuration = Date.now() - startTime;
 
+      // Evaluate screenshot safety BEFORE writing to static/public disk storage
+      const hasSensitiveFields = extracted.elements.some((el) => {
+        if (el.type === 'password') return true;
+        const textToScan = `${el.name || ''} ${el.id || ''} ${el.label || ''} ${el.placeholder || ''} ${el.text || ''}`.toLowerCase();
+        return /\b(password|passwd|pin|otp|secret|token|ssn|credit[_-]?card|cvv|cvc)\b/i.test(textToScan);
+      });
+
+      const safetyAssessment = ScreenshotPrivacyManager.evaluateScreenshotSafety(
+        screenshotBuffer,
+        hasSensitiveFields,
+        { elements: extracted.elements, hasSensitiveFields }
+      );
+
+      let screenshotUrl: string | undefined = undefined;
+      // SAFE? YES -> store if required. NO -> DO NOT store to disk/public storage.
+      if (safetyAssessment.allowed_to_persist && screenshotBuffer) {
+        const screenshotFilename = `perception_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.png`;
+        const screenshotFullPath = path.join(screenshotsDir, screenshotFilename);
+        fs.writeFileSync(screenshotFullPath, screenshotBuffer);
+        screenshotUrl = `/static/screenshots/${screenshotFilename}`;
+      } else {
+        screenshotUrl = undefined;
+      }
+
       // 6. Stages reflecting real backend progress
       const stages = [
         {
@@ -468,7 +419,7 @@ export class PagePerceptionService {
       return {
         success: true,
         url: targetUrl,
-        screenshot: screenshotUrl,
+        screenshot: screenshotUrl || '',
         screenshot_url: screenshotUrl,
         page: {
           title: extracted.title,
@@ -676,8 +627,25 @@ export class PagePerceptionService {
     .join('')}
 </svg>`;
 
-    fs.writeFileSync(screenshotFullPath, svgContent, 'utf-8');
-    const screenshotUrl = `/static/screenshots/${screenshotFilename}`;
+    const hasSensitiveInputs = scoredElements.some((el) => {
+      if (el.type === 'password') return true;
+      const text = `${el.name || ''} ${el.id || ''} ${el.text || ''} ${el.placeholder || ''}`.toLowerCase();
+      return /\b(password|passwd|pin|otp|secret|token|ssn|credit[_-]?card|cvv|cvc)\b/i.test(text);
+    });
+
+    const safetyAssessment = ScreenshotPrivacyManager.evaluateScreenshotSafety(
+      svgContent,
+      hasSensitiveInputs,
+      { elements: scoredElements, hasSensitiveFields: hasSensitiveInputs }
+    );
+
+    let screenshotUrl: string | undefined = undefined;
+    if (safetyAssessment.allowed_to_persist) {
+      fs.writeFileSync(screenshotFullPath, svgContent, 'utf-8');
+      screenshotUrl = `/static/screenshots/${screenshotFilename}`;
+    } else {
+      screenshotUrl = undefined;
+    }
 
     const detectedFields = scoredElements.filter((el) => {
       const isInteractive = ['input', 'textarea', 'select', 'button'].includes(el.tag);
@@ -756,7 +724,7 @@ export class PagePerceptionService {
     return {
       success: true,
       url: targetUrl,
-      screenshot: screenshotUrl,
+      screenshot: screenshotUrl || '',
       screenshot_url: screenshotUrl,
       page: {
         title: pageTitle,

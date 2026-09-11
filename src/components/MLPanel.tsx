@@ -85,13 +85,17 @@ export const MLPanel: React.FC<MLPanelProps> = ({
             </div>
 
             <div className="p-3.5 bg-slate-50 rounded-lg border border-slate-200">
-              <span className="text-[11px] text-slate-500 font-medium block">Prediction Accuracy</span>
+              <span className="text-[11px] text-slate-500 font-medium block">
+                {stats.model_metadata?.training_accuracy != null ? 'Training Accuracy' : 'Prediction Accuracy'}
+              </span>
               <span className="text-xl font-bold text-slate-900 font-mono mt-0.5 block">
-                {Math.round(stats.success_rate * 100)}%
+                {stats.model_metadata?.training_accuracy != null
+                  ? `${Math.round(stats.model_metadata.training_accuracy * 100)}%`
+                  : `${Math.round(stats.success_rate * 100)}%`}
               </span>
               <span className="text-[10px] text-indigo-600 font-medium flex items-center space-x-1 mt-1">
                 <Zap className="w-3 h-3 inline" />
-                <span>Out-of-Bag Score</span>
+                <span>{stats.model_metadata?.training_accuracy != null ? 'Training Set' : 'Historical Rate'}</span>
               </span>
             </div>
 
