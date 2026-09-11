@@ -12,6 +12,8 @@ export interface DOMElementData {
   role?: string;
   value?: string;
   title?: string;
+  label?: string;
+  autocomplete?: string;
   x: number;
   y: number;
   width: number;
@@ -77,7 +79,17 @@ export class ElementDetector {
     const cClean = candidateStr.toLowerCase().trim();
 
     if (tClean === cClean) return 1.0;
-    if (tClean.includes(cClean) || cClean.includes(tClean)) return 0.88;
+    if (tClean.length >= 3 && cClean.length >= 3) {
+      const escapedT = tClean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const escapedC = cClean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const isWordBoundaryMatch =
+        new RegExp(`(^|\\b)${escapedT}(\\b|$)`, 'i').test(cClean) ||
+        new RegExp(`(^|\\b)${escapedC}(\\b|$)`, 'i').test(tClean);
+      if (isWordBoundaryMatch) {
+        const lengthRatio = Math.min(tClean.length, cClean.length) / Math.max(tClean.length, cClean.length);
+        if (lengthRatio >= 0.45) return 0.92;
+      }
+    }
 
     // Advanced token overlap with camelCase/kebab-case/snake_case support
     const tTokens = this.tokenize(tClean);
@@ -148,6 +160,166 @@ export class ElementDetector {
     return dp[a.length][b.length];
   }
 
+  /**
+   * Infer deterministic semantic category from DOM attributes (Priority 1 & 2)
+   */
+  public static inferFieldSemanticCategory(candidate: DOMElementData): string | null {
+    const tag = (candidate.tag || '').toLowerCase();
+    const type = (candidate.type || '').toLowerCase();
+    const name = (candidate.name || '').toLowerCase();
+    const id = String(candidate.id || '').toLowerCase();
+    const placeholder = (candidate.placeholder || '').toLowerCase();
+    const aria = (candidate.ariaLabel || '').toLowerCase();
+    const label = (candidate.label || '').toLowerCase();
+    const autocomplete = (candidate.autocomplete || '').toLowerCase();
+    const role = (candidate.role || '').toLowerCase();
+
+    // 1. Search input
+    const isSearchName = ['q', 'query', 'search', 'search_query', 'searchquery', 's'].includes(name.trim());
+    const isSearchId = ['search', 'search_query', 'searchquery', 'query', 'search-box', 'search-input'].includes(id.trim());
+    if (
+      type === 'search' ||
+      role === 'searchbox' ||
+      role === 'search' ||
+      isSearchName ||
+      isSearchId ||
+      /\b(search|find products|search for|site search|lookup)\b/i.test(placeholder) ||
+      /\b(search|find products|search for|site search|lookup)\b/i.test(aria) ||
+      /\b(search|find products|search for|site search|lookup)\b/i.test(label)
+    ) {
+      return 'SEARCH';
+    }
+
+    // 2. Phone field
+    if (
+      type === 'tel' ||
+      autocomplete.includes('tel') ||
+      /\b(phone|telephone|mobile|cell|tel|contact[_\s-]?no|contact[_\s-]?number)\b/i.test(name) ||
+      /\b(phone|telephone|mobile|cell|tel|contact[_\s-]?no|contact[_\s-]?number)\b/i.test(id) ||
+      /\b(phone|telephone|mobile|cell|tel|contact[_\s-]?no|contact[_\s-]?number)\b/i.test(placeholder) ||
+      /\b(phone|telephone|mobile|cell|tel|contact[_\s-]?no|contact[_\s-]?number)\b/i.test(label) ||
+      /\b(phone|telephone|mobile|cell|tel|contact[_\s-]?no|contact[_\s-]?number)\b/i.test(aria)
+    ) {
+      return 'PHONE';
+    }
+
+    // 3. Email field
+    if (
+      type === 'email' ||
+      autocomplete.includes('email') ||
+      /\b(email|e-mail|mail)\b/i.test(name) ||
+      /\b(email|e-mail|mail)\b/i.test(id) ||
+      /\b(email|e-mail|mail)\b/i.test(placeholder) ||
+      /\b(email|e-mail|mail)\b/i.test(label) ||
+      /\b(email|e-mail|mail)\b/i.test(aria)
+    ) {
+      return 'EMAIL';
+    }
+
+    // 4. Password field
+    if (
+      type === 'password' ||
+      autocomplete.includes('password') ||
+      /\b(password|passwd|pwd)\b/i.test(name) ||
+      /\b(password|passwd|pwd)\b/i.test(id) ||
+      /\b(password|passwd|pwd)\b/i.test(placeholder) ||
+      /\b(password|passwd|pwd)\b/i.test(label)
+    ) {
+      return 'PASSWORD';
+    }
+
+    // 5. Name field
+    if (
+      type !== 'password' &&
+      (
+        (autocomplete.includes('name') && !autocomplete.includes('username')) ||
+        /\b(fullname|full[_\s-]name|first[_\s-]name|last[_\s-]name|firstname|lastname|fname|lname)\b/i.test(name) ||
+        /\b(fullname|full[_\s-]name|first[_\s-]name|last[_\s-]name|firstname|lastname|fname|lname)\b/i.test(id) ||
+        /\b(fullname|full[_\s-]name|first[_\s-]name|last[_\s-]name|firstname|lastname)\b/i.test(label) ||
+        /\b(fullname|full[_\s-]name)\b/i.test(placeholder) ||
+        name.trim() === 'name' ||
+        id.trim() === 'name' ||
+        label.trim().toLowerCase() === 'name' ||
+        label.trim().toLowerCase() === 'full name' ||
+        label.trim().toLowerCase() === 'your name'
+      )
+    ) {
+      return 'NAME';
+    }
+
+    // 6. Address
+    if (
+      autocomplete.includes('address') ||
+      tag === 'textarea' ||
+      /\b(address|street|mailing|suite)\b/i.test(name) ||
+      /\b(address|street|mailing|suite)\b/i.test(id) ||
+      /\b(address|street|mailing)\b/i.test(label) ||
+      /\b(address|street|mailing)\b/i.test(placeholder)
+    ) {
+      return 'ADDRESS';
+    }
+
+    // 7. Country
+    if (
+      tag === 'select' ||
+      autocomplete.includes('country') ||
+      /\b(country|nation)\b/i.test(name) ||
+      /\b(country|nation)\b/i.test(id) ||
+      /\b(country|nation)\b/i.test(label)
+    ) {
+      return 'COUNTRY';
+    }
+
+    // 8. Checkbox / Terms
+    if (
+      type === 'checkbox' ||
+      /\b(terms|conditions|agree|consent)\b/i.test(name) ||
+      /\b(terms|conditions|agree|consent)\b/i.test(id) ||
+      /\b(terms|conditions|agree|consent)\b/i.test(label)
+    ) {
+      return 'CHECKBOX';
+    }
+
+    return null;
+  }
+
+  /**
+   * Infer task intent semantic category from query/field metadata (Priority 3)
+   */
+  public static inferTargetSemanticCategory(intentData: any, actionType: string = 'CLICK'): string | null {
+    const norm = String(intentData?.normalized_name || '').toUpperCase().trim();
+    if (norm === 'PHONE') return 'PHONE';
+    if (norm === 'EMAIL') return 'EMAIL';
+    if (norm === 'NAME' || norm === 'FIRST_NAME' || norm === 'LAST_NAME') return 'NAME';
+    if (norm === 'PASSWORD') return 'PASSWORD';
+    if (norm === 'ADDRESS' || norm === 'CITY' || norm === 'ZIP_CODE' || norm === 'STATE') return 'ADDRESS';
+    if (norm === 'COUNTRY') return 'COUNTRY';
+    if (norm === 'TERMS') return 'CHECKBOX';
+    if (norm === 'SEARCH_QUERY') return 'SEARCH';
+
+    const intent = String(intentData?.intent || '').toUpperCase().trim();
+    if (intent === 'SEARCH') return 'SEARCH';
+
+    const targetCandidates = [
+      intentData?.target,
+      intentData?.field_name,
+      intentData?.query
+    ].filter(Boolean) as string[];
+
+    const combined = targetCandidates.join(' ').toLowerCase();
+
+    if (/\b(phone|mobile|tel|cell|contact[_\s-]?no|contact[_\s-]?number)\b/i.test(combined)) return 'PHONE';
+    if (/\b(email|e-mail|mail)\b/i.test(combined)) return 'EMAIL';
+    if (/\b(password|pwd|pass)\b/i.test(combined)) return 'PASSWORD';
+    if (/\b(search|find products|lookup|query|search for)\b/i.test(combined)) return 'SEARCH';
+    if (/\b(fullname|full[_\s-]name|first[_\s-]name|last[_\s-]name|name)\b/i.test(combined)) return 'NAME';
+    if (/\b(address|street|city|state|zip)\b/i.test(combined)) return 'ADDRESS';
+    if (/\b(country|nation)\b/i.test(combined)) return 'COUNTRY';
+    if (/\b(terms|agree|conditions)\b/i.test(combined)) return 'CHECKBOX';
+
+    return null;
+  }
+
   public static calculateCandidateScores(
     candidate: DOMElementData,
     intentData: any,
@@ -163,6 +335,8 @@ export class ElementDetector {
     const className = candidate.className || '';
     const role = candidate.role || '';
     const title = candidate.title || '';
+    const label = candidate.label || '';
+    const autocomplete = (candidate.autocomplete || '').toLowerCase();
 
     const targetCandidates = [
       intentData.target,
@@ -170,11 +344,12 @@ export class ElementDetector {
       intentData.query
     ].filter(Boolean) as string[];
 
-    // Semantic text match across all primary identifiers
+    // 1. Semantic text match across all primary identifiers
     let textSim = 0.0;
     for (const targetText of targetCandidates) {
       const sim = Math.max(
         this.textSimilarity(targetText, text),
+        this.textSimilarity(targetText, label),
         this.textSimilarity(targetText, placeholder),
         this.textSimilarity(targetText, aria),
         this.textSimilarity(targetText, name),
@@ -184,40 +359,74 @@ export class ElementDetector {
       );
       if (sim > textSim) textSim = sim;
     }
-    const targetText = targetCandidates[0] || '';
 
     const nameLower = name.toLowerCase().trim();
     const isSearchName = ['q', 'query', 'search', 'search_query', 'searchquery'].includes(nameLower);
-    const isSearchTarget = ['search', 'find', 'lookup', 'query'].includes(targetText.toLowerCase().trim());
 
-    if (actionType === 'TYPE' || intentData.intent === 'SEARCH' || isSearchTarget) {
+    // 2. Identify semantic categories for task intent and DOM candidate
+    const targetCategory = this.inferTargetSemanticCategory(intentData, actionType);
+    const candidateCategory = this.inferFieldSemanticCategory(candidate);
+
+    // 3. Apply Matching Priority & Browser DOM Semantics:
+    // Priority 1: Strong explicit DOM semantics
+    // Priority 2: Label / placeholder / autocomplete semantics
+    if (targetCategory && candidateCategory && targetCategory === candidateCategory) {
+      if (targetCategory === 'PHONE') {
+        const hasExplicitDom = candidateType === 'tel' || autocomplete.includes('tel');
+        textSim = Math.max(textSim, hasExplicitDom ? 0.98 : 0.94);
+      } else if (targetCategory === 'EMAIL') {
+        const hasExplicitDom = candidateType === 'email' || autocomplete.includes('email');
+        textSim = Math.max(textSim, hasExplicitDom ? 0.98 : 0.94);
+      } else if (targetCategory === 'NAME') {
+        const hasExplicitDom = autocomplete.includes('name') || nameLower === 'name' || elemId.toLowerCase() === 'name';
+        textSim = Math.max(textSim, hasExplicitDom ? 0.98 : 0.94);
+      } else if (targetCategory === 'PASSWORD') {
+        const hasExplicitDom = candidateType === 'password' || autocomplete.includes('password');
+        textSim = Math.max(textSim, hasExplicitDom ? 0.98 : 0.94);
+      } else if (targetCategory === 'SEARCH') {
+        const hasExplicitDom = candidateType === 'search' || isSearchName || role === 'searchbox' || role === 'search';
+        textSim = Math.max(textSim, hasExplicitDom ? 0.96 : 0.92);
+      } else if (targetCategory === 'CHECKBOX') {
+        textSim = Math.max(textSim, candidateType === 'checkbox' ? 0.98 : 0.94);
+      }
+    }
+
+    // Priority 3: Task intent ↔ field-type compatibility (Semantic Mismatch Penalty)
+    // A SEARCH field must NOT become a PHONE/EMAIL/NAME candidate merely because visual confidence is high.
+    if (candidateCategory === 'SEARCH' && targetCategory !== 'SEARCH') {
+      textSim = Math.min(textSim, 0.05);
+    } else if (candidateCategory === 'PASSWORD' && targetCategory !== 'PASSWORD') {
+      textSim = Math.min(textSim, 0.05);
+    } else if (targetCategory && candidateCategory && targetCategory !== candidateCategory) {
+      // Incompatible field roles (e.g. phone vs email, name vs phone)
       if (
-        ['input', 'textarea'].includes(tag) &&
-        (placeholder.toLowerCase().includes('search') ||
-          placeholder.toLowerCase().includes('find') ||
-          isSearchName ||
-          className.toLowerCase().includes('search') ||
-          elemId.toLowerCase().includes('search') ||
-          candidateType === 'search')
+        (targetCategory === 'PHONE' && candidateCategory === 'EMAIL') ||
+        (targetCategory === 'EMAIL' && candidateCategory === 'PHONE') ||
+        (targetCategory === 'NAME' && (candidateCategory === 'PHONE' || candidateCategory === 'EMAIL'))
       ) {
-        const inputMatch = Math.max(
-          this.textSimilarity('search', placeholder),
-          this.textSimilarity('find', placeholder),
-          this.textSimilarity('query', name),
-          this.textSimilarity('search', aria),
-          this.textSimilarity('search', elemId),
-          candidateType === 'search' ? 0.90 : 0.0
-        );
-        textSim = Math.max(textSim, inputMatch);
+        textSim = Math.min(textSim, 0.10);
       }
     }
 
     // DOM Confidence Calculation
     let domConf = 0.50;
     if (['input', 'button', 'a', 'select', 'textarea'].includes(tag)) domConf += 0.20;
-    if (aria || placeholder || name || elemId) domConf += 0.15;
+    if (aria || placeholder || name || elemId || label) domConf += 0.15;
     if (textSim > 0.60) domConf += 0.15;
-    domConf = Math.min(0.98, Math.max(0.20, domConf));
+
+    // Apply explicit DOM semantics boost
+    if (targetCategory && candidateCategory && targetCategory === candidateCategory) {
+      domConf = Math.max(domConf, 0.95);
+    }
+
+    // Penalize DOM confidence on obvious semantic mismatch
+    if (candidateCategory === 'SEARCH' && targetCategory !== 'SEARCH') {
+      domConf = Math.min(domConf, 0.25);
+    } else if (candidateCategory === 'PASSWORD' && targetCategory !== 'PASSWORD') {
+      domConf = Math.min(domConf, 0.25);
+    }
+
+    domConf = Math.min(0.98, Math.max(0.15, domConf));
 
     // Visual Confidence Calculation
     const w = candidate.width || 0;

@@ -2,13 +2,13 @@
   "modelVersion": "v1.0.0",
   "status": "TRAINED",
   "weights": [
-    -2.4327833927890525,
-    1.3799632462029892,
-    8.728892277512488,
-    -13.790035856684941,
-    34.256644872717786
+    -2.4391213637557367,
+    0.9529393274707925,
+    4.670615477049382,
+    -13.546603144932297,
+    39.54972453567113
   ],
-  "bias": -17.51254482055591,
+  "bias": -17.208253930862046,
   "samples": [
     {
       "timestamp": 1788948169633,
@@ -2947,9 +2947,360 @@
       "outcome": "VERIFIED_SUCCESS",
       "candidate_type": "element",
       "action_type": "FILL"
+    },
+    {
+      "task_id": "task_[PHONE_REDACTED]_5w05g",
+      "timestamp": 1789139322187,
+      "x": [
+        0.95,
+        0.98,
+        0.88,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "input",
+      "action_type": "TYPE"
+    },
+    {
+      "timestamp": 1789139325779,
+      "x": [
+        0.95,
+        0.98,
+        0.88,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "USER_CORRECTION",
+      "candidate_type": "input",
+      "action_type": "fill"
+    },
+    {
+      "timestamp": 1789139325783,
+      "x": [
+        0.85,
+        0.85,
+        0.77,
+        0.8,
+        0.5
+      ],
+      "y": 0,
+      "outcome": "USER_REJECTED_ALTERNATIVE",
+      "candidate_type": "input",
+      "action_type": "fill"
+    },
+    {
+      "timestamp": 1789139325785,
+      "x": [
+        0.95,
+        0.85,
+        0.15,
+        0.8,
+        0.5
+      ],
+      "y": 0,
+      "outcome": "USER_REJECTED_ALTERNATIVE",
+      "candidate_type": "input",
+      "action_type": "fill"
+    },
+    {
+      "timestamp": 1789139325787,
+      "x": [
+        0.95,
+        0.85,
+        0.15,
+        0.8,
+        0.5
+      ],
+      "y": 0,
+      "outcome": "USER_REJECTED_ALTERNATIVE",
+      "candidate_type": "input",
+      "action_type": "fill"
+    },
+    {
+      "task_id": "task_[PHONE_REDACTED]_vpwza",
+      "timestamp": 1789139331118,
+      "x": [
+        0.6,
+        0.85,
+        0.15,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "textarea",
+      "action_type": "TYPE"
+    },
+    {
+      "task_id": "task_[PHONE_REDACTED]_bnbsl",
+      "timestamp": 1789139345539,
+      "x": [
+        0.95,
+        0.98,
+        0.88,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "input",
+      "action_type": "TYPE"
+    },
+    {
+      "timestamp": 1789139354426,
+      "x": [
+        0.95,
+        0.85,
+        0.15,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "USER_CORRECTION",
+      "candidate_type": "a",
+      "action_type": "fill"
+    },
+    {
+      "timestamp": 1789139354428,
+      "x": [
+        0.95,
+        0.98,
+        0.88,
+        0.8,
+        0.5
+      ],
+      "y": 0,
+      "outcome": "USER_REJECTED_ALTERNATIVE",
+      "candidate_type": "a",
+      "action_type": "fill"
+    },
+    {
+      "timestamp": 1789139354429,
+      "x": [
+        0.6,
+        0.98,
+        0.88,
+        0.8,
+        0.5
+      ],
+      "y": 0,
+      "outcome": "USER_REJECTED_ALTERNATIVE",
+      "candidate_type": "a",
+      "action_type": "fill"
+    },
+    {
+      "timestamp": 1789139354431,
+      "x": [
+        0.85,
+        0.85,
+        0.77,
+        0.8,
+        0.5
+      ],
+      "y": 0,
+      "outcome": "USER_REJECTED_ALTERNATIVE",
+      "candidate_type": "a",
+      "action_type": "fill"
+    },
+    {
+      "timestamp": 1789139354433,
+      "x": [
+        0.95,
+        0.85,
+        0.15,
+        0.8,
+        0.5
+      ],
+      "y": 0,
+      "outcome": "USER_REJECTED_ALTERNATIVE",
+      "candidate_type": "a",
+      "action_type": "fill"
+    },
+    {
+      "task_id": "plan_[PHONE_REDACTED]_gwej",
+      "timestamp": 1789139400531,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "plan_[PHONE_REDACTED]_gwej",
+      "timestamp": 1789139400609,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "plan_[PHONE_REDACTED]_gwej",
+      "timestamp": 1789139400698,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "exec_[PHONE_REDACTED]",
+      "timestamp": 1789139409442,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "exec_[PHONE_REDACTED]",
+      "timestamp": 1789139410864,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "exec_[PHONE_REDACTED]",
+      "timestamp": 1789139415233,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "SELECT"
+    },
+    {
+      "task_id": "exec_[PHONE_REDACTED]",
+      "timestamp": 1789139416711,
+      "x": [
+        0.8,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "CHECK"
+    },
+    {
+      "task_id": "exec_[PHONE_REDACTED]",
+      "timestamp": 1789139419434,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "exec_[PHONE_REDACTED]",
+      "timestamp": 1789139422279,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "e2e_task_[PHONE_REDACTED]",
+      "timestamp": 1789139433640,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "e2e_task_[PHONE_REDACTED]",
+      "timestamp": 1789139433732,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
+    },
+    {
+      "task_id": "e2e_task_[PHONE_REDACTED]",
+      "timestamp": 1789139433813,
+      "x": [
+        0.95,
+        0.98,
+        1,
+        0.8,
+        0.85
+      ],
+      "y": 1,
+      "outcome": "VERIFIED_SUCCESS",
+      "candidate_type": "element",
+      "action_type": "FILL"
     }
   ],
-  "lastTrained": "2026-09-11T10:02:05.302Z",
+  "lastTrained": "2026-09-11T15:10:33.815Z",
   "trainingAccuracy": 1,
   "accuracy": 1
 }
